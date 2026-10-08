@@ -1,0 +1,1394 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#3383c5">
+    <title>Harnsäure-Rechner – Gicht-Lotse</title>
+
+    <!--
+      Seitenrahmen (Kopf, Einleitung, Fuß).
+      Diese Styles gehören NUR zur Testseite – in WordPress übernimmt das Theme diese Aufgabe.
+      Es werden bewusst keine Google Fonts geladen (DSGVO): Open Sans wird genutzt,
+      wenn sie auf dem Gerät vorhanden ist, sonst die Systemschrift.
+    -->
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: #000;
+        background: linear-gradient(160deg, #ffffff 0%, #eaf5fd 45%, #cfe9fa 100%);
+      }
+
+      .seite-kopf {
+        background: linear-gradient(75deg, #ffffff 0%, #3383c5 99%);
+        padding: 1rem 1.25rem;
+      }
+
+      .seite-kopf a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #000;
+        text-decoration: none;
+      }
+
+      .seite-kopf a span {
+        color: #3383c5;
+      }
+
+      .seite-inhalt {
+        max-width: 60rem;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+
+      .seite-einleitung {
+        max-width: 42rem;
+        margin: 0 auto 2rem;
+        text-align: center;
+      }
+
+      .seite-einleitung h1 {
+        margin: 0 0 0.75rem;
+        font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+        line-height: 1.2;
+      }
+
+      .seite-einleitung p {
+        margin: 0;
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: #3d3d3d;
+      }
+
+      .seite-fuss {
+        padding: 1.5rem 1rem 2rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #6b6b6b;
+      }
+
+      .seite-fuss a {
+        color: #3383c5;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="seite-kopf">
+      <a href="index.html">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3383c5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <polygon points="16.2 7.8 14.1 14.1 7.8 16.2 9.9 9.9 16.2 7.8" fill="#3383c5"/>
+        </svg>
+        <strong>Gicht-<span>Lotse</span></strong>
+      </a>
+    </header>
+
+    <main class="seite-inhalt">
+      <div class="seite-einleitung">
+        <h1>Wie stark kann Deine Ernährung Deine Harnsäure senken?</h1>
+        <p>Probiere es aus: Gib ein, wie Du heute isst und trinkst – und sieh live, wie sich Dein Harnsäurewert verändern könnte, wenn Du etwas umstellst.</p>
+      </div>
+
+<!-- ===================================================================
+     HARNSÄURE-RECHNER – APP START
+     Alles von hier bis „APP ENDE“ kann 1:1 in einen WordPress-Block
+     „Individuelles HTML“ kopiert werden. Alle Klassen beginnen mit „hr-“
+     und alle Styles gelten nur innerhalb von #harnsaeure-rechner,
+     damit das Theme nicht gestört wird.
+     Keine externen Ressourcen, keine Datenübertragung.
+     =================================================================== -->
+<style>
+  /* ---------- Grundgerüst und Farben (Gicht-Lotse-Farbpalette) ---------- */
+  #harnsaeure-rechner {
+    --hr-blau: #3383c5;
+    --hr-blau-mittel: #3d99d8;
+    --hr-blau-hell: #86d8fc;
+    --hr-gruen: #79b279;
+    --hr-gruen-text: #3f7a3f;   /* dunkleres Grün für gut lesbaren Text */
+    --hr-gelb: #fcd200;
+    --hr-orange: #ff8533;
+    --hr-orange-text: #b8530f;  /* dunkleres Orange für gut lesbaren Text */
+    --hr-rot: #ff2c2c;
+    --hr-grau: #6b6b6b;
+    --hr-grau-hell: #cccccc;
+    --hr-text: #1a1a1a;
+
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: clamp(1rem, 4vw, 2rem);
+    font-family: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--hr-text);
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(51, 131, 197, 0.18);
+    text-align: left;
+  }
+
+  #harnsaeure-rechner *,
+  #harnsaeure-rechner *::before,
+  #harnsaeure-rechner *::after {
+    box-sizing: border-box;
+  }
+
+  #harnsaeure-rechner [hidden] {
+    display: none !important;
+  }
+
+  #harnsaeure-rechner h2,
+  #harnsaeure-rechner h3,
+  #harnsaeure-rechner p {
+    margin: 0;
+  }
+
+  /* ---------- Fortschrittsanzeiger ---------- */
+  #harnsaeure-rechner .hr-fortschritt {
+    margin-bottom: 1.5rem;
+  }
+
+  #harnsaeure-rechner .hr-fortschritt-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--hr-grau);
+    margin-bottom: 0.5rem;
+  }
+
+  #harnsaeure-rechner .hr-fortschritt-liste {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  #harnsaeure-rechner .hr-fortschritt-liste li {
+    padding-top: 0.5rem;
+    border-top: 5px solid var(--hr-grau-hell);
+    font-size: 0.8rem;
+    color: var(--hr-grau);
+  }
+
+  #harnsaeure-rechner .hr-fortschritt-liste li.hr-erledigt,
+  #harnsaeure-rechner .hr-fortschritt-liste li.hr-aktiv {
+    border-top-color: var(--hr-blau);
+    color: var(--hr-text);
+  }
+
+  #harnsaeure-rechner .hr-fortschritt-liste li.hr-aktiv {
+    font-weight: 700;
+  }
+
+  /* ---------- Schritt-Überschriften ---------- */
+  #harnsaeure-rechner .hr-schritt-titel {
+    font-size: clamp(1.3rem, 3.5vw, 1.6rem);
+    line-height: 1.25;
+    color: var(--hr-blau);
+    outline: none;
+  }
+
+  #harnsaeure-rechner .hr-schritt-text {
+    margin-top: 0.4rem;
+    color: #3d3d3d;
+  }
+
+  #harnsaeure-rechner .hr-richtung {
+    display: flex;
+    justify-content: space-between;
+    margin: 1.25rem 0 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--hr-grau);
+  }
+
+  /* ---------- Gruppen-Überschriften (Mehr davon / Weniger davon) ---------- */
+  #harnsaeure-rechner .hr-gruppen-titel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.5rem 0 0.75rem;
+    font-size: 1rem;
+  }
+
+  #harnsaeure-rechner .hr-gruppen-titel::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--hr-akzent);
+  }
+
+  #harnsaeure-rechner .hr-gruppen-titel--do {
+    --hr-akzent: var(--hr-gruen);
+    color: var(--hr-gruen-text);
+  }
+
+  #harnsaeure-rechner .hr-gruppen-titel--dont {
+    --hr-akzent: var(--hr-orange);
+    color: var(--hr-orange-text);
+  }
+
+  /* ---------- Ein Schieberegler-Block ---------- */
+  #harnsaeure-rechner .hr-regler {
+    padding: 0.9rem 1rem 0.8rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #e6e6e6;
+    border-left: 5px solid var(--hr-akzent);
+    border-radius: 14px;
+    background: #fafcfe;
+  }
+
+  #harnsaeure-rechner .hr-regler--do {
+    --hr-akzent: var(--hr-gruen);
+    --hr-akzent-text: var(--hr-gruen-text);
+  }
+
+  #harnsaeure-rechner .hr-regler--dont {
+    --hr-akzent: var(--hr-orange);
+    --hr-akzent-text: var(--hr-orange-text);
+  }
+
+  #harnsaeure-rechner .hr-regler-kopf {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  #harnsaeure-rechner .hr-icon {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    color: var(--hr-akzent-text);
+    background: color-mix(in srgb, var(--hr-akzent) 18%, #fff);
+  }
+
+  #harnsaeure-rechner .hr-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  #harnsaeure-rechner .hr-regler-name {
+    flex: 1;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  #harnsaeure-rechner .hr-wert {
+    display: block;
+    margin-top: 0.15rem;
+    font-weight: 600;
+    color: var(--hr-akzent-text);
+  }
+
+  /* Spur mit der grauen „heute“-Markierung */
+  #harnsaeure-rechner .hr-spur {
+    position: relative;
+    margin-top: 0.4rem;
+  }
+
+  #harnsaeure-rechner .hr-heute-marke {
+    position: absolute;
+    top: 50%;
+    /* 14px = halbe Breite des Reglerknopfs, damit Marke und Knopf übereinstimmen */
+    left: calc(14px + var(--hr-pos, 0) * (100% - 28px));
+    width: 6px;
+    height: 24px;
+    margin: -12px 0 0 -3px;
+    border-radius: 3px;
+    background: var(--hr-grau);
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  #harnsaeure-rechner .hr-skala {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--hr-grau);
+  }
+
+  #harnsaeure-rechner .hr-skala span:last-child {
+    text-align: right;
+  }
+
+  #harnsaeure-rechner .hr-portion {
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--hr-grau);
+  }
+
+  /* ---------- Schieberegler (gut mit dem Finger bedienbar) ---------- */
+  #harnsaeure-rechner .hr-range {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 40px;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    /* dezenter Verlauf: links ungünstig (orange) → rechts ideal (grün) */
+    --hr-spur-farbe: linear-gradient(90deg, #ffd3b5 0%, #fff0a6 50%, #cfe7cf 100%);
+  }
+
+  #harnsaeure-rechner .hr-range:focus {
+    outline: none;
+  }
+
+  #harnsaeure-rechner .hr-range::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--hr-spur-farbe);
+  }
+
+  #harnsaeure-rechner .hr-range::-moz-range-track {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--hr-spur-farbe);
+  }
+
+  #harnsaeure-rechner .hr-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    margin-top: -9px;
+    border-radius: 50%;
+    border: 5px solid var(--hr-akzent, var(--hr-blau));
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+
+  #harnsaeure-rechner .hr-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 5px solid var(--hr-akzent, var(--hr-blau));
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+
+  #harnsaeure-rechner .hr-range:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px var(--hr-blau-hell);
+  }
+
+  #harnsaeure-rechner .hr-range:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 4px var(--hr-blau-hell);
+  }
+
+  /* ---------- Schritt 2: Harnsäurewert ---------- */
+  #harnsaeure-rechner .hr-wert-box {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    border-radius: 14px;
+    background: #f2f8fd;
+    border: 1px solid #d6e8f6;
+  }
+
+  #harnsaeure-rechner .hr-wert-zeile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  #harnsaeure-rechner .hr-wert-zeile label {
+    font-weight: 700;
+  }
+
+  #harnsaeure-rechner .hr-zahlfeld {
+    width: 6.5rem;
+    padding: 0.55rem 0.7rem;
+    font: inherit;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: right;
+    color: var(--hr-text);
+    border: 2px solid var(--hr-blau-hell);
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  #harnsaeure-rechner .hr-zahlfeld:focus {
+    outline: none;
+    border-color: var(--hr-blau);
+  }
+
+  #harnsaeure-rechner .hr-zahlfeld:disabled,
+  #harnsaeure-rechner .hr-range:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  #harnsaeure-rechner .hr-wert-box .hr-range {
+    --hr-akzent: var(--hr-blau);
+    --hr-spur-farbe: linear-gradient(90deg, #cfe7cf 0%, #fff0a6 30%, #ffc9c9 100%);
+    margin-top: 0.75rem;
+  }
+
+  #harnsaeure-rechner .hr-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  #harnsaeure-rechner .hr-checkbox input {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    accent-color: var(--hr-blau);
+  }
+
+  #harnsaeure-rechner .hr-hinweis {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    background: #fff;
+    border-left: 4px solid var(--hr-blau);
+  }
+
+  /* ---------- Schritt 3: Tacho + Regler ---------- */
+  #harnsaeure-rechner .hr-schritt3-raster {
+    display: grid;
+    gap: 1.25rem;
+    margin-top: 1rem;
+  }
+
+  #harnsaeure-rechner .hr-ergebnis {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 2;
+    padding: 0.75rem 1rem 1rem;
+    border-radius: 16px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid #d6e8f6;
+    box-shadow: 0 6px 20px rgba(51, 131, 197, 0.15);
+  }
+
+  #harnsaeure-rechner .hr-tacho {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  #harnsaeure-rechner .hr-zeiger {
+    transform-box: view-box;
+    transform-origin: 120px 120px;
+    transition: transform 0.7s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  #harnsaeure-rechner .hr-zahl {
+    font-size: clamp(1.8rem, 6vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  #harnsaeure-rechner .hr-differenz {
+    font-size: 0.6em;
+    font-weight: 700;
+  }
+
+  #harnsaeure-rechner .hr-differenz--besser {
+    color: var(--hr-gruen-text);
+  }
+
+  #harnsaeure-rechner .hr-differenz--schlechter {
+    color: #c41d1d;
+  }
+
+  #harnsaeure-rechner .hr-zone {
+    display: inline-block;
+    margin-top: 0.4rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  #harnsaeure-rechner .hr-zone--gruen {
+    background: #dff0df;
+    color: var(--hr-gruen-text);
+  }
+
+  #harnsaeure-rechner .hr-zone--gelb {
+    background: #fff4b8;
+    color: #7a6400;
+  }
+
+  #harnsaeure-rechner .hr-zone--rot {
+    background: #ffe0e0;
+    color: #b01818;
+  }
+
+  #harnsaeure-rechner .hr-legende {
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--hr-grau);
+  }
+
+  #harnsaeure-rechner .hr-legende-strich {
+    display: inline-block;
+    width: 4px;
+    height: 12px;
+    margin: 0 0.25rem -1px 0;
+    border-radius: 2px;
+    background: var(--hr-grau);
+    opacity: 0.75;
+  }
+
+  /* ---------- Buttons ---------- */
+  #harnsaeure-rechner .hr-navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  #harnsaeure-rechner .hr-button {
+    min-height: 48px;
+    padding: 0.7rem 1.5rem;
+    font: inherit;
+    font-weight: 700;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  #harnsaeure-rechner .hr-button--weiter {
+    margin-left: auto;
+    color: #fff;
+    background: var(--hr-blau);
+  }
+
+  #harnsaeure-rechner .hr-button--weiter:hover {
+    background: var(--hr-orange);
+  }
+
+  #harnsaeure-rechner .hr-button--zurueck {
+    color: var(--hr-blau);
+    background: #fff;
+    border-color: var(--hr-blau-hell);
+  }
+
+  #harnsaeure-rechner .hr-button--zurueck:hover {
+    border-color: var(--hr-blau);
+  }
+
+  #harnsaeure-rechner .hr-button--klein {
+    min-height: 40px;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  #harnsaeure-rechner .hr-button:focus-visible {
+    outline: 3px solid var(--hr-blau-hell);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Disclaimer, Quellen, CTA ---------- */
+  #harnsaeure-rechner .hr-disclaimer {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding: 1rem 1.1rem;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    background: #fff8e0;
+    border: 1px solid #f5dd7a;
+  }
+
+  #harnsaeure-rechner .hr-disclaimer svg {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    color: #a07a00;
+  }
+
+  #harnsaeure-rechner .hr-quellen {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+
+  #harnsaeure-rechner .hr-quellen summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--hr-blau);
+  }
+
+  #harnsaeure-rechner .hr-quellen p {
+    margin-top: 0.5rem;
+    color: #3d3d3d;
+  }
+
+  #harnsaeure-rechner .hr-cta {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    border-radius: 16px;
+    text-align: center;
+    color: #fff;
+    background: linear-gradient(75deg, var(--hr-blau-mittel), var(--hr-blau));
+  }
+
+  #harnsaeure-rechner .hr-cta p {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+
+  #harnsaeure-rechner .hr-cta a {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 20px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--hr-orange);
+    text-decoration: none;
+  }
+
+  #harnsaeure-rechner .hr-cta a:hover {
+    background: #e8701f;
+  }
+
+  /* ---------- Breite Bildschirme: Tacho rechts neben den Reglern ---------- */
+  @media (min-width: 760px) {
+    #harnsaeure-rechner .hr-schritt3-raster {
+      grid-template-columns: 1fr 300px;
+      align-items: start;
+    }
+
+    #harnsaeure-rechner .hr-ergebnis {
+      order: 2;
+      top: 1rem;
+    }
+  }
+
+  /* ---------- Schmale Bildschirme: Tacho kompakt, bleibt beim Scrollen sichtbar ---------- */
+  @media (max-width: 759px) {
+    #harnsaeure-rechner .hr-tacho {
+      max-width: 210px;
+    }
+
+    #harnsaeure-rechner .hr-legende {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #harnsaeure-rechner .hr-zeiger {
+      transition: none;
+    }
+  }
+</style>
+
+<div id="harnsaeure-rechner">
+  <!-- Fortschrittsanzeiger -->
+  <div class="hr-fortschritt">
+    <p class="hr-fortschritt-text" id="hr-fortschritt-text">Schritt 1 von 3</p>
+    <ol class="hr-fortschritt-liste">
+      <li data-hr-fortschritt="1">So esse ich heute</li>
+      <li data-hr-fortschritt="2">Mein Harnsäurewert</li>
+      <li data-hr-fortschritt="3">So möchte ich essen</li>
+    </ol>
+  </div>
+
+  <!-- Schritt 1: So esse ich heute -->
+  <section data-hr-schritt="1">
+    <h2 class="hr-schritt-titel" tabindex="-1">So esse ich heute</h2>
+    <p class="hr-schritt-text">Wie oft isst und trinkst Du das in einer typischen Woche? Schätze ruhig grob.</p>
+    <div class="hr-richtung" aria-hidden="true"><span>← ungünstig</span><span>ideal →</span></div>
+    <div id="hr-regler-heute"></div>
+  </section>
+
+  <!-- Schritt 2: Harnsäurewert (optional) -->
+  <section data-hr-schritt="2" hidden>
+    <h2 class="hr-schritt-titel" tabindex="-1">Mein aktueller Harnsäurewert</h2>
+    <p class="hr-schritt-text">Kennst Du Deinen Wert aus der letzten Blutuntersuchung? Dann trage ihn hier ein. Das ist freiwillig.</p>
+
+    <div class="hr-wert-box">
+      <div class="hr-wert-zeile">
+        <label for="hr-wert-feld">Harnsäure:</label>
+        <input type="text" inputmode="decimal" id="hr-wert-feld" class="hr-zahlfeld" autocomplete="off" aria-describedby="hr-wert-einheit">
+        <span id="hr-wert-einheit">mg/dl</span>
+      </div>
+      <input type="range" id="hr-wert-regler" class="hr-range" aria-label="Harnsäurewert in mg/dl">
+      <div class="hr-skala" aria-hidden="true"><span id="hr-wert-min"></span><span id="hr-wert-max"></span></div>
+
+      <label class="hr-checkbox">
+        <input type="checkbox" id="hr-unbekannt">
+        Ich kenne meinen Wert nicht
+      </label>
+      <p class="hr-hinweis" id="hr-unbekannt-hinweis" hidden></p>
+    </div>
+  </section>
+
+  <!-- Schritt 3: So möchte ich essen -->
+  <section data-hr-schritt="3" hidden>
+    <h2 class="hr-schritt-titel" tabindex="-1">So möchte ich essen</h2>
+    <p class="hr-schritt-text">Schiebe die Regler nach rechts – das ist immer besser für Deine Harnsäure. Der graue Strich zeigt, wie Du heute isst.</p>
+
+    <div class="hr-schritt3-raster">
+      <div class="hr-ergebnis" aria-live="polite">
+        <svg class="hr-tacho" id="hr-tacho" viewBox="0 0 240 140" role="img" aria-labelledby="hr-zahl"></svg>
+        <p class="hr-zahl" id="hr-zahl"></p>
+        <p id="hr-basis" class="hr-legende" hidden></p>
+        <span class="hr-zone" id="hr-zone"></span>
+        <p class="hr-legende"><span class="hr-legende-strich"></span>Ausgangswert · Zeiger = neuer Wert</p>
+      </div>
+
+      <div>
+        <div class="hr-richtung" aria-hidden="true"><span>← ungünstig</span><span>ideal →</span></div>
+        <div id="hr-regler-neu"></div>
+        <button type="button" class="hr-button hr-button--zurueck hr-button--klein" id="hr-reset">Auf „heute“ zurücksetzen</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Navigation -->
+  <div class="hr-navigation">
+    <button type="button" class="hr-button hr-button--zurueck" id="hr-zurueck" hidden>Zurück</button>
+    <button type="button" class="hr-button hr-button--weiter" id="hr-weiter">Weiter</button>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="hr-disclaimer" role="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <p><strong>Keine medizinische Beratung.</strong> Der Rechner liefert nur eine grobe Schätzung auf Basis statistischer Durchschnittswerte aus Studien. Dein tatsächlicher Wert kann deutlich abweichen. Bitte sprich Änderungen Deiner Ernährung oder Medikamente immer mit Deiner Ärztin oder Deinem Arzt ab. Deine Eingaben bleiben in Deinem Browser und werden nicht übertragen.</p>
+  </div>
+
+  <!-- Quellen (aufklappbar) -->
+  <details class="hr-quellen">
+    <summary>Quellen anzeigen</summary>
+    <p id="hr-quellen-text"></p>
+  </details>
+
+  <!-- Call to Action -->
+  <div class="hr-cta">
+    <p id="hr-cta-text"></p>
+    <a id="hr-cta-link" href="#"></a>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =====================================================================
+     KONFIGURATION – alle Zahlen und Texte an einer Stelle.
+     Werte mit [OFFEN] sind Annahmen aus dem Briefing und noch nicht bestätigt.
+     ===================================================================== */
+  var CONFIG = {
+    // Skala für Harnsäure (Eingabe in Schritt 2 und Tacho in Schritt 3)
+    harnsaeure: {
+      min: 4,
+      max: 12,
+      schritt: 0.1,
+      startwert: 7.0 // [OFFEN] Startwert des Reglers
+    },
+
+    // [OFFEN] Verhalten bei „Ich kenne meinen Wert nicht“:
+    // Annahme: Wir rechnen mit diesem Beispielwert und stellen die Veränderung in den Vordergrund.
+    unbekannt: {
+      beispielwert: 7.0,
+      hinweis: "Kein Problem! Wir rechnen mit einem Beispielwert von 7,0 mg/dl. Entscheidend ist im Ergebnis die Veränderung, die Deine Ernährung bewirken kann."
+    },
+
+    // [OFFEN – Grenzen bestätigen] Ampel für den Tacho
+    ampel: {
+      gelbAb: 6.0, // unter 6,0 = grün
+      rotAb: 6.8,  // ab 6,8 = rot
+      texte: {
+        gruen: "Zielbereich",
+        gelb: "Knapp über dem Zielbereich", // [OFFEN] Text für Gelb
+        rot: "Über der Löslichkeitsgrenze"
+      }
+    },
+
+    // Umrechnung: „1× pro Monat oder seltener“ ≈ 0,23 pro Woche
+    idealProWocheDonts: 0.23,
+
+    // Vitamin-C-Menge pro Tag [OFFEN: Tage pro Woche oder mg pro Tag?]
+    vitaminCMg: 400,
+
+    /* -------- Dos: Menge steigt von links nach rechts --------
+       Anteil = eingestellter Wert ÷ Idealwert
+       maxEffekt = Senkung in mg/dl bei 100 % */
+    dos: [
+      {
+        id: "milch",
+        name: "Milchprodukte, fettarm",
+        icon: "milch",
+        max: 7,          // Portionen pro Woche (= Idealwert)
+        maxEffekt: 0.2,
+        startHeute: 2,   // [OFFEN] Startposition in Schritt 1
+        skala: ["keine", "7× pro Woche"],
+        portion: "1 Portion ≈ 1 Glas fettarme Milch (200 ml) oder 150 g Joghurt bzw. Quark" // [OFFEN]
+      },
+      {
+        id: "vitaminc",
+        name: "Vitamin C",
+        icon: "vitaminc",
+        max: 7,          // Tage pro Woche (= Idealwert)
+        maxEffekt: 0.2,
+        startHeute: 1,   // [OFFEN]
+        skala: ["an keinem Tag", "täglich"],
+        portion: "z. B. als Nahrungsergänzung oder reichlich Obst und Gemüse (400 mg ≈ 5 Orangen)" // [OFFEN]
+      },
+      {
+        id: "kaffee",
+        name: "Kaffee",
+        icon: "kaffee",
+        max: 28,         // Tassen pro Woche (= Idealwert, 4 pro Tag)
+        maxEffekt: 0.2,
+        startHeute: 7,   // [OFFEN]
+        skala: ["keinen", "4 Tassen täglich"],
+        portion: "1 Tasse ≈ 150 ml Filterkaffee" // [OFFEN]
+      }
+    ],
+
+    /* -------- Don'ts: Häufigkeit steigt von rechts nach links --------
+       Anteil = (Grenzwert − Häufigkeit) / (Grenzwert − 0,23), begrenzt auf 0 … 1
+       Stufen von links (ungünstig) nach rechts (ideal) */
+    donts: [
+      {
+        id: "fleisch",
+        name: "Fleisch, Innereien, Fisch, Meeresfrüchte",
+        icon: "fleisch",
+        grenzwert: 2,
+        maxEffekt: 0.4,
+        startHeute: 1, // Index der Stufe [OFFEN]
+        stufen: [
+          { proWoche: 2,    text: "2× pro Woche oder mehr" },
+          { proWoche: 1.5,  text: "1–2× pro Woche" },
+          { proWoche: 1,    text: "1× pro Woche" },
+          { proWoche: 0.47, text: "2× pro Monat" },
+          { proWoche: 0.23, text: "1× pro Monat oder seltener" }
+        ],
+        portion: "1 Portion ≈ 150 g" // [OFFEN]
+      },
+      {
+        id: "fructose",
+        name: "Fructose, Zucker (Softdrink, Saft, Süßes)",
+        icon: "zucker",
+        grenzwert: 7,
+        maxEffekt: 0.3,
+        startHeute: 2, // [OFFEN]
+        stufen: [
+          { proWoche: 7,    text: "täglich oder öfter" },
+          { proWoche: 5,    text: "5× pro Woche" },
+          { proWoche: 3,    text: "3× pro Woche" },
+          { proWoche: 1,    text: "1× pro Woche" },
+          { proWoche: 0.47, text: "2× pro Monat" },
+          { proWoche: 0.23, text: "1× pro Monat oder seltener" }
+        ],
+        portion: "1 Portion ≈ 1 Glas Saft oder Softdrink (0,25 l) oder vergleichbar Süßes" // [OFFEN]
+      },
+      {
+        id: "alkohol",
+        name: "Alkohol (Bier, Spirituosen)",
+        icon: "alkohol",
+        grenzwert: 7,
+        maxEffekt: 0.5,
+        startHeute: 2, // [OFFEN]
+        stufen: [
+          { proWoche: 7,    text: "täglich oder öfter" },
+          { proWoche: 5,    text: "5× pro Woche" },
+          { proWoche: 3,    text: "3× pro Woche" },
+          { proWoche: 1,    text: "1× pro Woche" },
+          { proWoche: 0.47, text: "2× pro Monat" },
+          { proWoche: 0.23, text: "1× pro Monat oder seltener" }
+        ],
+        portion: "1 Portion ≈ 0,3 l Bier, 0,15 l Wein oder 2 cl Spirituose" // [OFFEN]
+      }
+    ],
+
+    // [OFFEN – Quellen liefern]
+    quellen: "Die Studienquellen werden hier in Kürze ergänzt.",
+
+    // [OFFEN – Text und Link]
+    cta: {
+      text: "Du möchtest Deine Ernährung gezielt umstellen? Ich begleite Dich dabei.",
+      button: "Beratungsgespräch vereinbaren",
+      link: "https://gicht-lotse.de/"
+    }
+  };
+
+  /* =====================================================================
+     ICONS (Inline-SVG, keine externen Dateien)
+     ===================================================================== */
+  var ICONS = {
+    milch: '<path d="M8 2h8"/><path d="M9 2v3.5L7 9v11a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9l-2-3.5V2"/><path d="M7 13h10"/>',
+    vitaminc: '<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/>',
+    kaffee: '<path d="M17 8h1a3 3 0 0 1 0 6h-1"/><path d="M3 8h14v7a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5Z"/><path d="M7 2v3M11 2v3M15 2v3"/>',
+    fleisch: '<path d="M2 12c3-5 9-6 13-3l5-3v12l-5-3c-4 3-10 2-13-3Z"/><circle cx="7" cy="11" r="1"/>',
+    zucker: '<path d="M7 2h10l-1.5 20h-7Z"/><path d="M6.5 8h11"/><path d="M14 2l2-1"/>',
+    alkohol: '<path d="M6 4h10v15a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3Z"/><path d="M16 8h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M6 8h10"/>'
+  };
+
+  function iconSvg(name) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONS[name] + "</svg>";
+  }
+
+  /* =====================================================================
+     HILFSFUNKTIONEN
+     ===================================================================== */
+  var wurzel = document.getElementById("harnsaeure-rechner");
+  if (!wurzel) return;
+
+  function $(selektor) {
+    return wurzel.querySelector(selektor);
+  }
+
+  // Wert auf den Bereich min … max begrenzen
+  function begrenzen(wert, min, max) {
+    return Math.min(max, Math.max(min, wert));
+  }
+
+  // Zahl mit deutschem Komma, z. B. 6.5 → „6,5“
+  function zahlDe(wert, nachkommastellen) {
+    return wert.toLocaleString("de-DE", {
+      minimumFractionDigits: nachkommastellen,
+      maximumFractionDigits: nachkommastellen
+    });
+  }
+
+  // Eingabe mit Komma oder Punkt in eine Zahl umwandeln („6,5“ → 6.5)
+  function zahlLesen(text) {
+    return parseFloat(String(text).replace(",", ".").trim());
+  }
+
+  function runden1(wert) {
+    return Math.round(wert * 10) / 10;
+  }
+
+  /* =====================================================================
+     GRUPPEN: Anteil und Klartext
+     ===================================================================== */
+
+  // Alle Gruppen in einer Liste – zuerst die Dos, dann die Don'ts
+  var GRUPPEN = CONFIG.dos.map(function (g) {
+    return Object.assign({ art: "do", min: 0, schritt: 1 }, g);
+  }).concat(CONFIG.donts.map(function (g) {
+    return Object.assign({ art: "dont", min: 0, max: g.stufen.length - 1, schritt: 1 }, g);
+  }));
+
+  // Anteil zwischen ungünstig (0) und ideal (1) für eine Reglerposition
+  function anteil(gruppe, position) {
+    if (gruppe.art === "do") {
+      return begrenzen(position / gruppe.max, 0, 1);
+    }
+    var proWoche = gruppe.stufen[position].proWoche;
+    var ideal = CONFIG.idealProWocheDonts;
+    return begrenzen((gruppe.grenzwert - proWoche) / (gruppe.grenzwert - ideal), 0, 1);
+  }
+
+  // Eingestellten Wert in Klartext umwandeln
+  function klartext(gruppe, position) {
+    if (gruppe.art === "dont") {
+      return gruppe.stufen[position].text;
+    }
+    var w = position;
+    switch (gruppe.id) {
+      case "milch":
+        if (w === 0) return "keine Portion pro Woche";
+        if (w === 1) return "1 Portion pro Woche";
+        if (w === 7) return "7 Portionen pro Woche (1 pro Tag)";
+        return w + " Portionen pro Woche";
+      case "vitaminc":
+        var mg = CONFIG.vitaminCMg + " mg";
+        if (w === 0) return "an keinem Tag";
+        if (w === 1) return "an 1 Tag pro Woche je " + mg;
+        if (w === 7) return "täglich je " + mg;
+        return "an " + w + " Tagen pro Woche je " + mg;
+      case "kaffee":
+        if (w === 0) return "keine Tasse pro Woche";
+        if (w === 1) return "1 Tasse pro Woche";
+        var text = w + " Tassen pro Woche";
+        if (w >= 7) {
+          var proTag = w / 7;
+          text += " (≈ " + (proTag % 1 === 0 ? proTag : zahlDe(proTag, 1)) + " pro Tag)";
+        }
+        return text;
+      default:
+        return String(w);
+    }
+  }
+
+  /* =====================================================================
+     ZUSTAND (alles bleibt im Browser)
+     ===================================================================== */
+  var zustand = {
+    schritt: 1,
+    heute: {},          // Reglerpositionen aus Schritt 1
+    neu: {},            // Reglerpositionen aus Schritt 3
+    heuteBeimLetztenMal: null, // um zu erkennen, ob Schritt 1 geändert wurde
+    harnsaeure: CONFIG.harnsaeure.startwert,
+    unbekannt: false
+  };
+
+  GRUPPEN.forEach(function (g) {
+    zustand.heute[g.id] = g.startHeute;
+    zustand.neu[g.id] = g.startHeute;
+  });
+
+  /* =====================================================================
+     SCHIEBEREGLER AUFBAUEN
+     modus = "heute" (Schritt 1) oder "neu" (Schritt 3)
+     ===================================================================== */
+  function reglerAufbauen(container, modus) {
+    var html = "";
+    var vorherigeArt = null;
+
+    GRUPPEN.forEach(function (g) {
+      // Zwischenüberschrift, wenn eine neue Art beginnt
+      if (g.art !== vorherigeArt) {
+        html += g.art === "do"
+          ? '<h3 class="hr-gruppen-titel hr-gruppen-titel--do">Mehr davon – gut für Deine Harnsäure</h3>'
+          : '<h3 class="hr-gruppen-titel hr-gruppen-titel--dont">Weniger davon – besser für Deine Harnsäure</h3>';
+        vorherigeArt = g.art;
+      }
+
+      var id = "hr-" + modus + "-" + g.id;
+      var skalaLinks = g.art === "do" ? g.skala[0] : g.stufen[0].text;
+      var skalaRechts = g.art === "do" ? g.skala[1] : g.stufen[g.stufen.length - 1].text;
+
+      html +=
+        '<div class="hr-regler hr-regler--' + g.art + '">' +
+          '<div class="hr-regler-kopf">' +
+            '<span class="hr-icon">' + iconSvg(g.icon) + "</span>" +
+            '<div class="hr-regler-name"><label for="' + id + '">' + g.name + "</label>" +
+              '<output class="hr-wert" for="' + id + '" id="' + id + '-text"></output>' +
+            "</div>" +
+          "</div>" +
+          '<div class="hr-spur">' +
+            (modus === "neu" ? '<span class="hr-heute-marke" id="' + id + '-marke"></span>' : "") +
+            '<input type="range" class="hr-range" id="' + id + '" data-gruppe="' + g.id + '"' +
+              ' min="' + g.min + '" max="' + g.max + '" step="' + g.schritt + '">' +
+          "</div>" +
+          '<div class="hr-skala" aria-hidden="true"><span>' + skalaLinks + "</span><span>" + skalaRechts + "</span></div>" +
+          '<p class="hr-portion">' + g.portion + "</p>" +
+        "</div>";
+    });
+
+    container.innerHTML = html;
+
+    // Reaktion auf Bewegung des Reglers
+    container.addEventListener("input", function (e) {
+      var regler = e.target;
+      if (!regler.matches(".hr-range")) return;
+      zustand[modus][regler.dataset.gruppe] = Number(regler.value);
+      reglerAnzeigen(modus);
+      if (modus === "neu") ergebnisAnzeigen();
+    });
+  }
+
+  // Reglerpositionen und Klartexte aus dem Zustand übernehmen
+  function reglerAnzeigen(modus) {
+    GRUPPEN.forEach(function (g) {
+      var id = "hr-" + modus + "-" + g.id;
+      var regler = $("#" + id);
+      var wert = zustand[modus][g.id];
+      var text = klartext(g, wert);
+
+      regler.value = wert;
+      regler.setAttribute("aria-valuetext", text);
+      $("#" + id + "-text").textContent = text;
+
+      // Graue Markierung für „heute“ (nur in Schritt 3)
+      var marke = $("#" + id + "-marke");
+      if (marke) {
+        var pos = (zustand.heute[g.id] - g.min) / (g.max - g.min);
+        marke.style.setProperty("--hr-pos", pos);
+      }
+    });
+  }
+
+  /* =====================================================================
+     SCHRITT 2: Harnsäurewert (Regler und Zahlenfeld synchron)
+     ===================================================================== */
+  var wertRegler = $("#hr-wert-regler");
+  var wertFeld = $("#hr-wert-feld");
+  var unbekanntBox = $("#hr-unbekannt");
+  var unbekanntHinweis = $("#hr-unbekannt-hinweis");
+  var H = CONFIG.harnsaeure;
+
+  wertRegler.min = H.min;
+  wertRegler.max = H.max;
+  wertRegler.step = H.schritt;
+  $("#hr-wert-min").textContent = "≤ " + H.min + " mg/dl";
+  $("#hr-wert-max").textContent = "≥ " + H.max + " mg/dl";
+  unbekanntHinweis.textContent = CONFIG.unbekannt.hinweis;
+
+  function harnsaeureAnzeigen() {
+    wertRegler.value = zustand.harnsaeure;
+    wertRegler.setAttribute("aria-valuetext", zahlDe(zustand.harnsaeure, 1) + " mg/dl");
+    wertFeld.value = zahlDe(zustand.harnsaeure, 1);
+  }
+
+  wertRegler.addEventListener("input", function () {
+    zustand.harnsaeure = runden1(Number(wertRegler.value));
+    harnsaeureAnzeigen();
+  });
+
+  // Während des Tippens nur übernehmen, wenn die Zahl im gültigen Bereich liegt
+  wertFeld.addEventListener("input", function () {
+    var zahl = zahlLesen(wertFeld.value);
+    if (!isNaN(zahl) && zahl >= H.min && zahl <= H.max) {
+      zustand.harnsaeure = runden1(zahl);
+      wertRegler.value = zustand.harnsaeure;
+    }
+  });
+
+  // Beim Verlassen des Feldes: auf den Bereich begrenzen und schön formatieren
+  wertFeld.addEventListener("change", function () {
+    var zahl = zahlLesen(wertFeld.value);
+    if (!isNaN(zahl)) {
+      zustand.harnsaeure = runden1(begrenzen(zahl, H.min, H.max));
+    }
+    harnsaeureAnzeigen();
+  });
+
+  unbekanntBox.addEventListener("change", function () {
+    zustand.unbekannt = unbekanntBox.checked;
+    wertRegler.disabled = zustand.unbekannt;
+    wertFeld.disabled = zustand.unbekannt;
+    unbekanntHinweis.hidden = !zustand.unbekannt;
+  });
+
+  /* =====================================================================
+     BERECHNUNG
+     Neuer Wert = Ausgangswert − Σ ( MaxEffekt × (Anteil_neu − Anteil_heute) )
+     ===================================================================== */
+  function ausgangswert() {
+    return zustand.unbekannt ? CONFIG.unbekannt.beispielwert : zustand.harnsaeure;
+  }
+
+  function neuerWert() {
+    var summe = 0;
+    GRUPPEN.forEach(function (g) {
+      summe += g.maxEffekt * (anteil(g, zustand.neu[g.id]) - anteil(g, zustand.heute[g.id]));
+    });
+    return runden1(ausgangswert() - summe);
+  }
+
+  /* =====================================================================
+     TACHO (Halbkreis, Inline-SVG)
+     ===================================================================== */
+  var TACHO = { mx: 120, my: 120, radius: 92, dicke: 20 };
+
+  // Wert → Punkt auf dem Halbkreis (links = min, rechts = max)
+  function tachoPunkt(wert, radius) {
+    var anteilSkala = (begrenzen(wert, H.min, H.max) - H.min) / (H.max - H.min);
+    var winkel = Math.PI * (1 - anteilSkala);
+    return {
+      x: TACHO.mx + radius * Math.cos(winkel),
+      y: TACHO.my - radius * Math.sin(winkel)
+    };
+  }
+
+  // Bogen zwischen zwei Werten (für die Farbzonen)
+  function bogen(von, bis) {
+    var a = tachoPunkt(von, TACHO.radius);
+    var b = tachoPunkt(bis, TACHO.radius);
+    return "M " + a.x + " " + a.y + " A " + TACHO.radius + " " + TACHO.radius + " 0 0 1 " + b.x + " " + b.y;
+  }
+
+  function tachoAufbauen() {
+    var A = CONFIG.ampel;
+    var svg = "";
+
+    // Farbzonen: grün → gelb → rot
+    svg += '<path d="' + bogen(H.min, A.gelbAb) + '" stroke="#79b279" stroke-width="' + TACHO.dicke + '" fill="none"/>';
+    svg += '<path d="' + bogen(A.gelbAb, A.rotAb) + '" stroke="#fcd200" stroke-width="' + TACHO.dicke + '" fill="none"/>';
+    svg += '<path d="' + bogen(A.rotAb, H.max) + '" stroke="#ff2c2c" stroke-width="' + TACHO.dicke + '" fill="none"/>';
+
+    // Skalenstriche und Zahlen für jede ganze Zahl
+    for (var w = H.min; w <= H.max; w++) {
+      var innen = tachoPunkt(w, TACHO.radius - TACHO.dicke / 2 - 2);
+      var aussen = tachoPunkt(w, TACHO.radius - TACHO.dicke / 2 - 7);
+      var text = tachoPunkt(w, TACHO.radius - TACHO.dicke / 2 - 16);
+      var beschriftung = w === H.min ? "≤" + w : w === H.max ? "≥" + w : String(w);
+      svg += '<line x1="' + innen.x + '" y1="' + innen.y + '" x2="' + aussen.x + '" y2="' + aussen.y + '" stroke="#6b6b6b" stroke-width="1.5"/>';
+      svg += '<text x="' + text.x + '" y="' + (text.y + 3) + '" font-size="9" fill="#6b6b6b" text-anchor="middle" font-family="inherit">' + beschriftung + "</text>";
+    }
+
+    // Markierung für den Ausgangswert (grauer Strich über den Bogen)
+    svg += '<line id="hr-tacho-start" stroke="#3d3d3d" stroke-width="4" stroke-linecap="round" opacity="0.7"/>';
+
+    // Zeiger (zeigt in Grundstellung nach oben und wird per CSS gedreht)
+    svg +=
+      '<g class="hr-zeiger" id="hr-zeiger">' +
+        '<path d="M ' + (TACHO.mx - 5) + " " + TACHO.my + " L " + TACHO.mx + " " + (TACHO.my - 82) + " L " + (TACHO.mx + 5) + " " + TACHO.my + ' Z" fill="#1a1a1a"/>' +
+      "</g>" +
+      '<circle cx="' + TACHO.mx + '" cy="' + TACHO.my + '" r="9" fill="#1a1a1a"/>' +
+      '<circle cx="' + TACHO.mx + '" cy="' + TACHO.my + '" r="3.5" fill="#fff"/>';
+
+    $("#hr-tacho").innerHTML = svg;
+  }
+
+  // Ampelfarbe für einen Wert
+  function zone(wert) {
+    if (wert < CONFIG.ampel.gelbAb) return "gruen";
+    if (wert < CONFIG.ampel.rotAb) return "gelb";
+    return "rot";
+  }
+
+  /* =====================================================================
+     ERGEBNIS ANZEIGEN (Tacho, große Zahl, Ampeltext)
+     ===================================================================== */
+  function ergebnisAnzeigen() {
+    var start = ausgangswert();
+    var neu = neuerWert();
+    var differenz = runden1(neu - start);
+
+    // Zeiger drehen: −90° = ganz links, +90° = ganz rechts
+    var anteilSkala = (begrenzen(neu, H.min, H.max) - H.min) / (H.max - H.min);
+    $("#hr-zeiger").style.transform = "rotate(" + (-90 + anteilSkala * 180) + "deg)";
+
+    // Ausgangswert-Markierung
+    var a = tachoPunkt(start, TACHO.radius - TACHO.dicke / 2 - 1);
+    var b = tachoPunkt(start, TACHO.radius + TACHO.dicke / 2 + 4);
+    var marke = $("#hr-tacho-start");
+    marke.setAttribute("x1", a.x);
+    marke.setAttribute("y1", a.y);
+    marke.setAttribute("x2", b.x);
+    marke.setAttribute("y2", b.y);
+
+    // Differenz mit echtem Minuszeichen, z. B. „(−0,9)“
+    var diffText = differenz === 0 ? "±0,0" : (differenz < 0 ? "−" : "+") + zahlDe(Math.abs(differenz), 1);
+    var diffKlasse = differenz < 0 ? "hr-differenz--besser" : differenz > 0 ? "hr-differenz--schlechter" : "";
+
+    var zahl = $("#hr-zahl");
+    var basis = $("#hr-basis");
+    if (zustand.unbekannt) {
+      // Wert unbekannt: Veränderung steht im Vordergrund [OFFEN]
+      zahl.innerHTML = '<span class="' + diffKlasse + '">' + diffText + " mg/dl</span>";
+      basis.textContent = "Veränderung, ausgehend vom Beispielwert " + zahlDe(start, 1) + " mg/dl → " + zahlDe(neu, 1) + " mg/dl";
+      basis.hidden = false;
+    } else {
+      zahl.innerHTML = zahlDe(neu, 1) + ' mg/dl <span class="hr-differenz ' + diffKlasse + '">(' + diffText + ")</span>";
+      basis.hidden = true;
+    }
+
+    var z = zone(neu);
+    var zoneEl = $("#hr-zone");
+    zoneEl.className = "hr-zone hr-zone--" + z;
+    zoneEl.textContent = CONFIG.ampel.texte[z];
+  }
+
+  /* =====================================================================
+     NAVIGATION ZWISCHEN DEN SCHRITTEN
+     ===================================================================== */
+  var knopfWeiter = $("#hr-weiter");
+  var knopfZurueck = $("#hr-zurueck");
+
+  function schrittZeigen(nummer, fokussieren) {
+    // Beim Wechsel zu Schritt 3: Regler starten auf den Werten von heute,
+    // aber nur, wenn sich Schritt 1 seit dem letzten Mal geändert hat
+    if (nummer === 3) {
+      var heuteJetzt = JSON.stringify(zustand.heute);
+      if (heuteJetzt !== zustand.heuteBeimLetztenMal) {
+        zustand.neu = Object.assign({}, zustand.heute);
+        zustand.heuteBeimLetztenMal = heuteJetzt;
+      }
+      reglerAnzeigen("neu");
+      ergebnisAnzeigen();
+    }
+
+    zustand.schritt = nummer;
+
+    wurzel.querySelectorAll("[data-hr-schritt]").forEach(function (abschnitt) {
+      abschnitt.hidden = Number(abschnitt.dataset.hrSchritt) !== nummer;
+    });
+
+    wurzel.querySelectorAll("[data-hr-fortschritt]").forEach(function (punkt) {
+      var n = Number(punkt.dataset.hrFortschritt);
+      punkt.classList.toggle("hr-aktiv", n === nummer);
+      punkt.classList.toggle("hr-erledigt", n < nummer);
+    });
+    $("#hr-fortschritt-text").textContent = "Schritt " + nummer + " von 3";
+
+    knopfZurueck.hidden = nummer === 1;
+    knopfWeiter.hidden = nummer === 3;
+    knopfWeiter.textContent = nummer === 2 ? "Weiter zum Ergebnis" : "Weiter";
+
+    if (fokussieren) {
+      // Nach oben zum Rechner scrollen, falls der Anfang nicht sichtbar ist
+      if (wurzel.getBoundingClientRect().top < 0) {
+        wurzel.scrollIntoView({ block: "start" });
+      }
+      $('[data-hr-schritt="' + nummer + '"] .hr-schritt-titel').focus({ preventScroll: true });
+    }
+  }
+
+  knopfWeiter.addEventListener("click", function () {
+    if (zustand.schritt === 2) {
+      // Zahlenfeld noch einmal sauber übernehmen, falls gerade getippt wurde
+      wertFeld.dispatchEvent(new Event("change"));
+    }
+    schrittZeigen(Math.min(3, zustand.schritt + 1), true);
+  });
+
+  knopfZurueck.addEventListener("click", function () {
+    schrittZeigen(Math.max(1, zustand.schritt - 1), true);
+  });
+
+  $("#hr-reset").addEventListener("click", function () {
+    zustand.neu = Object.assign({}, zustand.heute);
+    reglerAnzeigen("neu");
+    ergebnisAnzeigen();
+  });
+
+  /* =====================================================================
+     START
+     ===================================================================== */
+  reglerAufbauen($("#hr-regler-heute"), "heute");
+  reglerAufbauen($("#hr-regler-neu"), "neu");
+  reglerAnzeigen("heute");
+  harnsaeureAnzeigen();
+  tachoAufbauen();
+
+  $("#hr-quellen-text").textContent = CONFIG.quellen;
+  $("#hr-cta-text").textContent = CONFIG.cta.text;
+  $("#hr-cta-link").textContent = CONFIG.cta.button;
+  $("#hr-cta-link").href = CONFIG.cta.link;
+
+  schrittZeigen(1, false);
+})();
+</script>
+<!-- ===================================================================
+     HARNSÄURE-RECHNER – APP ENDE
+     =================================================================== -->
+
+    </main>
+
+    <footer class="seite-fuss">
+      <a href="index.html">Zur Startseite</a> · Gicht-Lotse
+    </footer>
+  </body>
+</html>
