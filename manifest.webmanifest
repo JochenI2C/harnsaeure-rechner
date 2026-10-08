@@ -1,0 +1,24 @@
+{
+  "id": "./",
+  "name": "Harnsäure-Rechner – Gicht-Lotse",
+  "short_name": "Harnsäure",
+  "description": "Sieh live, wie stark Deine Ernährung Deinen Harnsäurewert senken kann. Grobe Schätzung, keine medizinische Beratung.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "./harnsaeure-rechner.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e3eef7",
+  "theme_color": "#3383c5",
+  "categories": ["health", "medical", "food"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "screenshots/schritt-1.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Schritt 1: So esse ich heute" },
+    { "src": "screenshots/schritt-3.png", "sizes": "780x1688", "type": "image/png", "form_factor": "narrow", "label": "Schritt 3: Tacho mit geschätztem neuem Wert" }
+  ]
+}
