@@ -4,13 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
-<meta name="theme-color" content="#dcebf6">
+<meta name="theme-color" content="#3383c5">
 <!-- Wie eine App auf dem Homescreen (iPhone: Teilen → „Zum Home-Bildschirm“) -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Harnsäure">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%233383c5'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='white' stroke-width='4'/%3E%3Cpolygon points='42 22 36 36 22 42 28 28' fill='white'/%3E%3C/svg%3E">
+<!-- App-Dateien: Manifest (installierbar), Icons für Homescreen -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Harnsäure-Rechner – Gicht-Lotse</title>
 
 <!--
@@ -1972,6 +1975,16 @@
   ctaLink.href = CONFIG.cta.link;
 
   schrittZeigen(zustand.schritt, false);
+
+  /* =====================================================================
+     OFFLINE: Service Worker anmelden (nur auf echter Webadresse, nicht als Datei)
+     ===================================================================== */
+  var echteAdresse = location.protocol === "https:" || location.hostname === "localhost";
+  if ("serviceWorker" in navigator && echteAdresse) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("service-worker.js").catch(function () { /* egal */ });
+    });
+  }
 })();
 </script>
 </body>

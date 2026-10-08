@@ -23,3 +23,12 @@ Alle Zahlen und Texte (Skalen, Effekte, Ampelgrenzen, CTA, Quellen) stehen zentr
 
 - `harnsaeure-rechner-wordpress.html` – die bisherige Version zum Einbetten in WordPress (Block „Individuelles HTML“).
 - `BRIEFING-Harnsaeure-Rechner.md` – Anforderungen und offene Punkte.
+
+## Als App installierbar (PWA)
+
+- `manifest.webmanifest` – App-Name, Farben, Startseite, Icons
+- `icons/` – App-Icons (Tacho im Gicht-Lotse-Blau), `icon.svg` ist die Vorlage
+- `service-worker.js` – App startet auch ohne Internet. **Bei Änderungen an den Dateien `VERSION` im Service Worker hochzählen**, sonst sehen Nutzer evtl. noch die alte Version.
+- `screenshots/` – Bilder für den Installationsdialog
+
+Nächster Schritt: Android-App über https://www.pwabuilder.com erzeugen (Adresse: https://rchristwsn.github.io/harnsaeure-rechner/).
