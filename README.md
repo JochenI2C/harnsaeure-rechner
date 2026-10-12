@@ -2,6 +2,8 @@
 
 Mobile Version des Harnsäure-Rechners für **Gicht-Lotse** – optimiert für die Nutzung unterwegs auf dem Smartphone.
 
+**Online:** https://jocheni2c.github.io/harnsaeure-rechner/
+
 **Datei:** `harnsaeure-rechner.html` – einfach im Browser öffnen. `index.html` leitet automatisch dorthin weiter (für GitHub Pages). Eine einzige Datei, keine externen Ressourcen, keine Datenübertragung (DSGVO).
 
 ## Was ist neu gegenüber der Desktop-Version?
@@ -31,4 +33,4 @@ Alle Zahlen und Texte (Skalen, Effekte, Ampelgrenzen, CTA, Quellen) stehen zentr
 - `service-worker.js` – App startet auch ohne Internet. **Bei Änderungen an den Dateien `VERSION` im Service Worker hochzählen**, sonst sehen Nutzer evtl. noch die alte Version.
 - `screenshots/` – Bilder für den Installationsdialog
 
-Nächster Schritt: Android-App über https://www.pwabuilder.com erzeugen (Adresse: https://rchristwsn.github.io/harnsaeure-rechner/).
+Nächster Schritt: Android-App über https://www.pwabuilder.com erzeugen (Adresse: https://jocheni2c.github.io/harnsaeure-rechner/).
