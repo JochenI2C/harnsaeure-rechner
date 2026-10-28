@@ -1,0 +1,1958 @@
+{
+  "name": "YouTube-Analyse Gicht-Lotse",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "71873969-939a-5e8c-b3e4-d327a3f3e965",
+      "name": "Start (manuell)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5bf0547b-12af-5029-ad71-3712878a6269",
+              "name": "ziel_sheet_id",
+              "value": "HIER_ZIEL_SHEET_ID_EINTRAGEN",
+              "type": "string"
+            },
+            {
+              "id": "b666c67f-0389-57dc-a194-6fa046b7291d",
+              "name": "ziel_blatt",
+              "value": "Videos",
+              "type": "string"
+            },
+            {
+              "id": "664f98c2-684e-5ba6-9d0a-344c19151eb4",
+              "name": "studio_export_sheet_id",
+              "value": "1ZvIM94GocOg7WEkoRqyPzVvIJ1UNRax8BCjef_pCfIc",
+              "type": "string"
+            },
+            {
+              "id": "2dc34de1-01e4-5d1e-9221-9d53c0c3c042",
+              "name": "studio_export_blatt",
+              "value": "Tabellendaten",
+              "type": "string"
+            },
+            {
+              "id": "3c759631-8ed3-5813-ab38-dd8ffb842fd6",
+              "name": "thumbnail_ordner_id",
+              "value": "HIER_ORDNER_ID_EINTRAGEN",
+              "type": "string"
+            },
+            {
+              "id": "dc018ccd-b3b0-51f1-92e5-6183d0d754ca",
+              "name": "max_videos",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "c2b254ba-733a-553b-964a-452af3bd145c",
+              "name": "zeitzone",
+              "value": "Europe/Berlin",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "664e6a1d-cc81-577e-bbae-87877b587c91",
+      "name": "Konfiguration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/channels",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendQuery": true,
+        "options": {},
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "id,snippet,contentDetails"
+            },
+            {
+              "name": "mine",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "id": "47dc1c77-01ff-5d3a-a3d7-20a1798346bc",
+      "name": "Kanal holen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/playlistItems",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendQuery": true,
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "pageToken",
+                    "value": "={{ $response.body.nextPageToken }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.nextPageToken }}"
+            }
+          }
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "contentDetails"
+            },
+            {
+              "name": "playlistId",
+              "value": "={{ $json.items[0].contentDetails.relatedPlaylists.uploads }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "id": "6bbaa1fd-46fc-5a85-a834-ece6f0496bc7",
+      "name": "Upload-Playlist lesen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Konfiguration prüfen, dann alle Video-IDs der Upload-Playlist sammeln und in 50er-Gruppen teilen\nconst cfg = $('Konfiguration').first().json;\nfor (const feld of ['ziel_sheet_id', 'thumbnail_ordner_id', 'studio_export_sheet_id']) {\n  if (!cfg[feld] || String(cfg[feld]).startsWith('HIER_')) {\n    throw new Error(`Bitte im Node \"Konfiguration\" das Feld \"${feld}\" ausfüllen.`);\n  }\n}\n\nconst ids = [];\nfor (const seite of $input.all()) {\n  if (seite.json.error) {\n    throw new Error('Upload-Playlist konnte nicht gelesen werden: ' + JSON.stringify(seite.json.error));\n  }\n  for (const it of seite.json.items || []) {\n    const id = it.contentDetails && it.contentDetails.videoId;\n    if (id && !ids.includes(id)) ids.push(id);\n  }\n}\nif (ids.length === 0) throw new Error('Keine Videos in der Upload-Playlist gefunden.');\n\nconst gruppen = [];\nfor (let i = 0; i < ids.length; i += 50) {\n  gruppen.push({ json: { ids: ids.slice(i, i + 50).join(',') } });\n}\nreturn gruppen;\n"
+      },
+      "id": "78621a20-f27e-5b66-8627-971bd4ebe554",
+      "name": "Video-ID-Gruppen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/videos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendQuery": true,
+        "options": {},
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet,contentDetails,statistics,status"
+            },
+            {
+              "name": "id",
+              "value": "={{ $json.ids }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "id": "e4ecf18c-c6be-5dea-ab06-9f4e00f00062",
+      "name": "Video-Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nur öffentliche Videos, chronologisch sortiert; max_videos > 0 begrenzt die Anzahl (Test-Modus)\nconst cfg = $('Konfiguration').first().json;\nlet videos = [];\nfor (const seite of $input.all()) {\n  for (const v of seite.json.items || []) {\n    if (v.status && v.status.privacyStatus === 'public') videos.push(v);\n  }\n}\nvideos.sort((a, b) => a.snippet.publishedAt.localeCompare(b.snippet.publishedAt));\n\nconst max = Number(cfg.max_videos) || 0;\nif (max > 0) videos = videos.slice(0, max);\nif (videos.length === 0) throw new Error('Keine öffentlichen Videos gefunden.');\n\nreturn [{ json: { anzahl: videos.length, videos } }];\n"
+      },
+      "id": "be85a529-0093-5086-bf6b-6d2d3e1d7659",
+      "name": "Nur öffentliche Videos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/playlists",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendQuery": true,
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "pageToken",
+                    "value": "={{ $response.body.nextPageToken }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.nextPageToken }}"
+            }
+          }
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet"
+            },
+            {
+              "name": "mine",
+              "value": "true"
+            },
+            {
+              "name": "maxResults",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "id": "82319cce-80b7-5c98-9895-e38b2138c469",
+      "name": "Playlists holen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Eine Zeile pro Playlist; ohne Playlists ein Platzhalter, damit der Workflow weiterläuft\nconst playlists = [];\nfor (const seite of $input.all()) {\n  for (const p of seite.json.items || []) {\n    playlists.push({ json: { playlistId: p.id, title: (p.snippet && p.snippet.title) || '' } });\n  }\n}\nif (playlists.length === 0) playlists.push({ json: { playlistId: '', title: '' } });\nreturn playlists;\n"
+      },
+      "id": "994d7ad8-d01e-5439-a080-58a4ddcc5657",
+      "name": "Playlist-Liste",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/playlistItems",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendQuery": true,
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "pageToken",
+                    "value": "={{ $response.body.nextPageToken }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.nextPageToken }}"
+            }
+          }
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet"
+            },
+            {
+              "name": "playlistId",
+              "value": "={{ $json.playlistId }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "id": "a1341295-8ec7-5ff7-b2e4-de5d7b1e0766",
+      "name": "Playlist-Videos holen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/videoCategories",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendQuery": true,
+        "options": {},
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet"
+            },
+            {
+              "name": "regionCode",
+              "value": "DE"
+            },
+            {
+              "name": "hl",
+              "value": "de"
+            }
+          ]
+        }
+      },
+      "id": "1378fa05-45ea-5faa-b2f2-67e12cecfaeb",
+      "name": "Kategorien holen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        300
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Konfiguration').first().json.studio_export_sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Konfiguration').first().json.studio_export_blatt }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "0a3a22f4-83ae-5e33-b5ca-7b4bc190a564",
+      "name": "Studio-Export lesen",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2420,
+        300
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Maps aufbauen (Playlists, Kategorien, Studio-Export) und ein Item pro Video ausgeben\nconst videos = $('Nur öffentliche Videos').first().json.videos;\n\n// --- Playlists: videoId -> Playlist-Titel ---\nconst playlistTitel = {};\nfor (const it of $('Playlist-Liste').all()) {\n  if (it.json.playlistId) playlistTitel[it.json.playlistId] = it.json.title;\n}\nconst videoPlaylists = {};\nfor (const seite of $('Playlist-Videos holen').all()) {\n  for (const pi of seite.json.items || []) {\n    const sn = pi.snippet || {};\n    const videoId = (sn.resourceId && sn.resourceId.videoId) || (pi.contentDetails && pi.contentDetails.videoId);\n    const titel = playlistTitel[sn.playlistId];\n    if (!videoId || !titel) continue;\n    if (!videoPlaylists[videoId]) videoPlaylists[videoId] = [];\n    if (!videoPlaylists[videoId].includes(titel)) videoPlaylists[videoId].push(titel);\n  }\n}\n\n// --- Kategorien: categoryId -> Name ---\nconst kategorien = {};\nfor (const seite of $('Kategorien holen').all()) {\n  for (const k of seite.json.items || []) kategorien[k.id] = (k.snippet && k.snippet.title) || '';\n}\n\n// --- Studio-Export: videoId -> Impressionen/CTR/Endbildschirm ---\nconst norm = s => String(s).toLowerCase().replace(/[^a-z0-9äöüß]/g, '');\nconst zahl = wert => {\n  if (wert === null || wert === undefined || wert === '') return '';\n  if (typeof wert === 'number') return wert;\n  let s = String(wert).replace(/[%\\s ]/g, '');\n  // deutsches Format: \"1.234,5\" bzw. \"1.234\" (Punkt = Tausendertrenner)\n  if (s.includes(',') || /^-?\\d{1,3}(\\.\\d{3})+$/.test(s)) s = s.replace(/\\./g, '').replace(',', '.');\n  const n = Number(s);\n  return s !== '' && isFinite(n) ? n : '';\n};\n\n// Spalten tolerant erkennen (deutsch/englisch, Groß-/Kleinschreibung egal)\nfunction spaltenErkennen(namen) {\n  const sp = {};\n  for (const name of namen) {\n    const n = norm(name);\n    const ende = n.includes('endbildschirm') || n.includes('endscreen');\n    const rate = n.includes('klickrate') || n.includes('clickthroughrate') || n.includes('clickrate') || n.includes('ctr');\n    const impr = n.includes('impression');\n    const klicks = n.includes('klicks') || n.includes('clicks');\n    if (!sp.id && ['inhalt', 'content', 'videoid', 'video'].includes(n)) sp.id = name;\n    else if (!ende && !rate && ['impressionen', 'impressions'].includes(n)) sp.impressionen = name;\n    else if (!ende && rate && impr) sp.ctr = name;\n    else if (ende && rate) sp.endCtr = name;\n    else if (ende && impr) sp.endImpressionen = name;\n    else if (ende && klicks) sp.endKlicks = name;\n  }\n  return sp;\n}\n\nconst studioZeilen = $('Studio-Export lesen').all().map(i => i.json).filter(z => z && !z.error);\nconst alleSpalten = [...new Set(studioZeilen.flatMap(z => Object.keys(z)))];\nconst sp = spaltenErkennen(alleSpalten);\nconst studio = {};\nif (sp.id) {\n  for (const z of studioZeilen) {\n    const id = String(z[sp.id] || '').trim();\n    // Summenzeile \"Gesamt\"/\"Total\" und sonstige Nicht-Video-Zeilen überspringen\n    if (!/^[A-Za-z0-9_-]{11}$/.test(id)) continue;\n    studio[id] = {\n      impressionen: sp.impressionen ? zahl(z[sp.impressionen]) : '',\n      ctr: sp.ctr ? zahl(z[sp.ctr]) : '',\n      endImpressionen: sp.endImpressionen ? zahl(z[sp.endImpressionen]) : '',\n      endKlicks: sp.endKlicks ? zahl(z[sp.endKlicks]) : '',\n      endCtr: sp.endCtr ? zahl(z[sp.endCtr]) : '',\n    };\n  }\n}\n\nreturn videos.map(video => ({\n  json: {\n    video,\n    playlists: (videoPlaylists[video.id] || []).join(' | '),\n    kategorie: kategorien[video.snippet.categoryId] || video.snippet.categoryId || '',\n    studio: studio[video.id] || {},\n    studioSpalten: sp,\n  },\n}));\n"
+      },
+      "id": "a68b065b-c4b6-51c2-bab7-134f5dea266b",
+      "name": "Daten vorbereiten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "cd1eb343-8ca9-526d-9ba9-b1a9cbf3299e",
+      "name": "Loop über Videos",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Ein Item pro Analytics-Abfrage ({key, url}); der Video-Kontext reist als ctx mit\nconst cfg = $('Konfiguration').first().json;\nconst tz = cfg.zeitzone || 'Europe/Berlin';\nconst ctx = $input.first().json;\nconst id = ctx.video.id;\n\nconst heute = DateTime.now().setZone(tz).toISODate();\n// Lifetime ab UTC-Veröffentlichungsdatum; ein Tag Puffer, weil Analytics in US-Pacific-Zeit zählt\nconst lifetime = DateTime.fromISO(ctx.video.snippet.publishedAt, { zone: 'utc' }).minus({ days: 1 }).toISODate();\nconst ab = monate => {\n  const d = DateTime.now().setZone(tz).minus({ months: monate }).toISODate();\n  return d < lifetime ? lifetime : d;\n};\n\nconst BASIS = 'https://youtubeanalytics.googleapis.com/v2/reports';\nconst abfrage = (key, parameter) => {\n  const p = Object.assign({ ids: 'channel==MINE', startDate: lifetime, endDate: heute, filters: 'video==' + id }, parameter);\n  const qs = Object.entries(p).map(([k, w]) => k + '=' + encodeURIComponent(w)).join('&');\n  return { json: { key, url: BASIS + '?' + qs, ctx } };\n};\n\nreturn [\n  abfrage('basis', { metrics: 'views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,likes,comments,shares,subscribersGained,subscribersLost' }),\n  abfrage('wz_3m', { startDate: ab(3), metrics: 'views,estimatedMinutesWatched' }),\n  abfrage('wz_6m', { startDate: ab(6), metrics: 'views,estimatedMinutesWatched' }),\n  abfrage('wz_12m', { startDate: ab(12), metrics: 'views,estimatedMinutesWatched' }),\n  abfrage('karten', { metrics: 'cardImpressions,cardClicks,cardClickRate,cardTeaserImpressions,cardTeaserClicks' }),\n  abfrage('format', { dimensions: 'creatorContentType', metrics: 'views' }),\n  abfrage('quellen', { dimensions: 'insightTrafficSourceType', metrics: 'views' }),\n  abfrage('suche', { dimensions: 'insightTrafficSourceDetail', metrics: 'views', filters: `video==${id};insightTrafficSourceType==YT_SEARCH`, sort: '-views', maxResults: 10 }),\n  abfrage('extern', { dimensions: 'insightTrafficSourceDetail', metrics: 'views', filters: `video==${id};insightTrafficSourceType==EXT_URL`, sort: '-views', maxResults: 10 }),\n  abfrage('bindung', { dimensions: 'elapsedVideoTimeRatio', metrics: 'audienceWatchRatio,relativeRetentionPerformance' }),\n  abfrage('demografie', { dimensions: 'ageGroup,gender', metrics: 'viewerPercentage' }),\n  // Alle Länder holen (Top 3 im Code), damit sich die Anteile in % berechnen lassen\n  abfrage('laender', { dimensions: 'country', metrics: 'views', sort: '-views' }),\n  abfrage('geraete', { dimensions: 'deviceType', metrics: 'views' }),\n  abfrage('abostatus', { dimensions: 'subscribedStatus', metrics: 'views' }),\n];\n"
+      },
+      "id": "d115ddea-8e49-54b7-a3ab-6d7860db8246",
+      "name": "Analytics-Abfragen erzeugen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 4,
+              "batchInterval": 300
+            }
+          }
+        }
+      },
+      "id": "1128fe88-f4a8-5ac2-9cc1-bb98839dc618",
+      "name": "Analytics abrufen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3080,
+        560
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/commentThreads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendQuery": true,
+        "options": {
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "pageToken",
+                    "value": "={{ $response.body.nextPageToken }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.nextPageToken }}",
+              "limitPagesFetched": true,
+              "maxRequests": 2
+            }
+          }
+        },
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "part",
+              "value": "snippet"
+            },
+            {
+              "name": "videoId",
+              "value": "={{ $('Analytics-Abfragen erzeugen').first().json.ctx.video.id }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "100"
+            },
+            {
+              "name": "order",
+              "value": "time"
+            },
+            {
+              "name": "textFormat",
+              "value": "plainText"
+            }
+          ]
+        }
+      },
+      "id": "bdc509e6-c6cf-5b29-8b99-d84afee43186",
+      "name": "Kommentare abrufen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3300,
+        560
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Alle Ergebnisse eines Videos zu einer Zeile mit den Spalten des Blatts \"Videos\" zusammenführen\nconst cfg = $('Konfiguration').first().json;\nconst tz = cfg.zeitzone || 'Europe/Berlin';\nconst anfragen = $('Analytics-Abfragen erzeugen').all();\nconst antworten = $('Analytics abrufen').all();\nconst ctx = anfragen[0].json.ctx;\nconst v = ctx.video;\nconst sn = v.snippet || {};\nconst cd = v.contentDetails || {};\nconst st = v.statistics || {};\nconst status = v.status || {};\nconst studio = ctx.studio || {};\nconst id = v.id;\n\n// --- Hilfsfunktionen ---\nconst leer = '';\nconst r = (x, d = 1) => (typeof x === 'number' && isFinite(x)) ? Math.round(x * 10 ** d) / 10 ** d : leer;\nconst zahl = x => (x === undefined || x === null || x === '' || !isFinite(Number(x))) ? leer : Number(x);\nconst istZahl = x => typeof x === 'number' && isFinite(x);\nconst mmss = s => {\n  if (!istZahl(s)) return leer;\n  s = Math.round(s);\n  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');\n};\nconst hhmmss = s => {\n  if (!istZahl(s)) return leer;\n  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sek = s % 60;\n  return [h, m, sek].map(x => String(x).padStart(2, '0')).join(':');\n};\nconst kuerzen = (t, n = 45000) => t.length > n ? t.slice(0, n - 1) + '…' : t;\nconst janein = b => (b === undefined || b === null || b === '') ? leer : ((b === true || b === 'true') ? 'Ja' : 'Nein');\n\n// --- Analytics-Antworten per key zuordnen (fehlerhafte Abfragen bleiben undefined -> Spalte leer) ---\nconst A = {};\nantworten.forEach((item, i) => {\n  let p = item.pairedItem;\n  if (Array.isArray(p)) p = p[0];\n  const req = anfragen[(p && typeof p.item === 'number') ? p.item : i];\n  const b = item.json;\n  if (req && b && !b.error && Array.isArray(b.columnHeaders)) {\n    const kopf = b.columnHeaders.map(h => h.name);\n    A[req.json.key] = (b.rows || []).map(row => Object.fromEntries(kopf.map((k, j) => [k, row[j]])));\n  }\n});\n// Kennzahl aus einer Abfrage ohne dimensions; Abfrage ok, aber keine Zeilen -> 0\nconst wert = (key, metrik) => {\n  const rows = A[key];\n  if (!rows) return leer;\n  if (!rows.length) return 0;\n  return zahl(rows[0][metrik]);\n};\n// Anteile in % je Dimensionswert\nconst anteile = (key, dim, metrik) => {\n  const rows = A[key];\n  if (!rows || !rows.length) return null;\n  const m = {};\n  let summe = 0;\n  for (const row of rows) {\n    const n = Number(row[metrik]) || 0;\n    m[row[dim]] = (m[row[dim]] || 0) + n;\n    summe += n;\n  }\n  if (summe <= 0) return null;\n  for (const k in m) m[k] = m[k] / summe * 100;\n  return m;\n};\nconst pct = (m, ...keys) => m ? r(keys.reduce((s, k) => s + (m[k] || 0), 0), 1) : leer;\nconst std = min => istZahl(min) ? r(min / 60, 1) : leer;\n\n// --- Stammdaten ---\nconst titel = sn.title || '';\nconst pubUtc = DateTime.fromISO(sn.publishedAt, { zone: 'utc' });\nconst pubLokal = pubUtc.setZone(tz).setLocale('de');\nconst jetzt = DateTime.now().setZone(tz);\nconst name = pubUtc.toFormat('yyyy-MM-dd') + '-' + titel.trim().replace(/[\\/\\\\]/g, '-') + '-TS';\n\nconst iso = /^P(?:(\\d+)D)?(?:T(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?)?$/.exec(cd.duration || '');\nconst dauerSek = iso ? (+(iso[1] || 0)) * 86400 + (+(iso[2] || 0)) * 3600 + (+(iso[3] || 0)) * 60 + (+(iso[4] || 0)) : leer;\n\nlet format = leer;\nconst formate = anteile('format', 'creatorContentType', 'views');\nif (formate) {\n  const top = Object.entries(formate).sort((a, b) => b[1] - a[1])[0][0];\n  if (top === 'SHORTS') format = 'Short';\n  else if (top === 'VIDEO_ON_DEMAND') format = 'Long';\n}\nif (!format && istZahl(dauerSek)) format = dauerSek <= 180 ? 'Short' : 'Long';\n\n// --- Reichweite / Wiedergabezeit / Interaktion ---\nlet aufrufe = wert('basis', 'views');\nif (!istZahl(aufrufe)) aufrufe = zahl(st.viewCount);\nconst impressionen = studio.impressionen ?? leer;\nconst ctr = studio.ctr ?? leer;\nlet likes = wert('basis', 'likes');\nif (!istZahl(likes)) likes = zahl(st.likeCount);\nlet kommentare = wert('basis', 'comments');\nif (!istZahl(kommentare)) kommentare = zahl(st.commentCount);\nconst shares = wert('basis', 'shares');\nconst engagement = (istZahl(aufrufe) && aufrufe > 0 && istZahl(likes) && istZahl(kommentare) && istZahl(shares))\n  ? r((likes + kommentare + shares) / aufrufe * 100, 2) : leer;\nconst abosPlus = wert('basis', 'subscribersGained');\nconst abosMinus = wert('basis', 'subscribersLost');\n\n// --- Bindungskurve ---\nconst kurve = (A.bindung || [])\n  .map(x => ({ t: Number(x.elapsedVideoTimeRatio), w: Number(x.audienceWatchRatio), rel: Number(x.relativeRetentionPerformance) }))\n  .filter(p => isFinite(p.t) && isFinite(p.w))\n  .sort((a, b) => a.t - b.t);\nconst bindungBei = t => {\n  if (!kurve.length) return leer;\n  let best = kurve[0];\n  for (const p of kurve) if (Math.abs(p.t - t) < Math.abs(best.t - t)) best = p;\n  return r(best.w * 100, 1);\n};\nconst relWerte = kurve.map(p => p.rel).filter(x => isFinite(x));\nconst relBindung = relWerte.length ? r(relWerte.reduce((s, x) => s + x, 0) / relWerte.length, 2) : leer;\nlet staerksterAbfall = leer;\nif (kurve.length > 1 && istZahl(dauerSek)) {\n  let max = 0, bei = null;\n  for (let i = 1; i < kurve.length; i++) {\n    const d = kurve[i - 1].w - kurve[i].w;\n    if (d > max) { max = d; bei = kurve[i].t; }\n  }\n  if (bei !== null) staerksterAbfall = mmss(bei * dauerSek);\n}\n\n// --- Zugriffsquellen ---\nconst q = anteile('quellen', 'insightTrafficSourceType', 'views');\nconst bekannt = ['YT_SEARCH', 'RELATED_VIDEO', 'SUBSCRIBER', 'SHORTS', 'YT_CHANNEL', 'PLAYLIST', 'YT_PLAYLIST_PAGE', 'EXT_URL', 'END_SCREEN', 'NO_LINK_OTHER'];\nconst sonstige = q ? r(Math.max(0, 100 - bekannt.reduce((s, k) => s + (q[k] || 0), 0)), 1) : leer;\nconst topListe = key => A[key]\n  ? A[key].slice(0, 10).map(x => `${x.insightTrafficSourceDetail} (${x.views})`).join('; ')\n  : leer;\n\n// --- Info-Karten ---\nconst kImpr = wert('karten', 'cardImpressions');\nconst kKlicks = wert('karten', 'cardClicks');\nconst kTImpr = wert('karten', 'cardTeaserImpressions');\nconst kTKlicks = wert('karten', 'cardTeaserClicks');\nconst kRate = istZahl(kImpr) ? (kImpr > 0 && istZahl(kKlicks) ? r(kKlicks / kImpr * 100, 2) : 0) : leer;\nconst hatKarten = istZahl(kTImpr) ? ((kTImpr > 0 || kImpr > 0) ? 'Ja' : 'Nein') : leer;\n\n// --- Zuschauer ---\nlet weiblich = leer, maennlich = leer, topAlter = leer;\nif (A.demografie && A.demografie.length) {\n  const g = {}, a = {};\n  for (const x of A.demografie) {\n    const p = Number(x.viewerPercentage) || 0;\n    g[x.gender] = (g[x.gender] || 0) + p;\n    a[x.ageGroup] = (a[x.ageGroup] || 0) + p;\n  }\n  weiblich = r(g.female || 0, 1);\n  maennlich = r(g.male || 0, 1);\n  const top = Object.entries(a).sort((x, y) => y[1] - x[1])[0];\n  topAlter = `${top[0]} (${Math.round(top[1])} %)`;\n}\nconst laender = anteile('laender', 'country', 'views');\nconst top3Laender = laender\n  ? Object.entries(laender).sort((x, y) => y[1] - x[1]).slice(0, 3).map(([k, p]) => `${k} ${Math.round(p)} %`).join('; ')\n  : leer;\nconst geraete = anteile('geraete', 'deviceType', 'views');\nconst abostatus = anteile('abostatus', 'subscribedStatus', 'views');\n\n// --- Inhalt ---\nconst beschreibung = sn.description || '';\nconst urls = beschreibung.match(/https?:\\/\\/[^\\s<>\"'()\\[\\]]+/gi) || [];\nconst domains = [];\nfor (const u of urls) {\n  try {\n    const host = new URL(u).hostname.replace(/^www\\./, '');\n    if (!domains.includes(host)) domains.push(host);\n  } catch (e) { /* ungültige URL ignorieren */ }\n}\nconst ohneUrls = (titel + ' ' + beschreibung).replace(/https?:\\/\\/\\S+/gi, ' ');\nconst hashtags = [...new Set(ohneUrls.match(/#[\\p{L}\\p{N}_]+/gu) || [])];\nconst kapitel = beschreibung.split(/\\r?\\n/)\n  .filter(z => /^\\s*[-•▶►]?\\s*\\(?\\d{1,2}:\\d{2}(?::\\d{2})?\\)?(\\s|$)/.test(z)).length;\nconst tags = sn.tags || [];\n\n// --- Kommentare (max. 200 Threads) ---\nconst kommentarSeiten = $('Kommentare abrufen').all();\nconst kommentareOk = kommentarSeiten.some(s => Array.isArray(s.json.items));\nconst threads = kommentarSeiten.flatMap(s => s.json.items || []).slice(0, 200).map(t => ({\n  s: (t.snippet && t.snippet.topLevelComment && t.snippet.topLevelComment.snippet) || {},\n  antworten: (t.snippet && t.snippet.totalReplyCount) || 0,\n}));\nconst kText = c => (c.s.textDisplay || c.s.textOriginal || '').replace(/\\s+/g, ' ').trim();\nconst kommentartexte = kommentareOk\n  ? kuerzen(threads.map(c => DateTime.fromISO(c.s.publishedAt).setZone(tz).toFormat('yyyy-MM-dd') + ': ' + kText(c)).join(' ||| '))\n  : leer;\n\n// --- Thumbnail ---\nconst th = sn.thumbnails || {};\nconst thumbnailUrl = (th.maxres || th.standard || th.high || th.medium || th.default || {}).url || leer;\n\n// Zeile in Spaltenreihenfolge. Nicht enthalten (und daher nie überschrieben):\n// \"Info-Karten Ziele\", \"Endbildschirm Ziele\" (manuell) und \"Thumbnail\" (eigener Schreib-Node, USER_ENTERED).\nconst zeile = {\n  'Name': name,\n  'Video-ID': id,\n  'Titel': titel,\n  'YouTube-Link': format === 'Short' ? `https://www.youtube.com/shorts/${id}` : `https://www.youtube.com/watch?v=${id}`,\n  'Format (Short/Long)': format,\n  'Veröffentlicht am': pubLokal.toFormat('yyyy-MM-dd HH:mm'),\n  'Wochentag': pubLokal.toFormat('cccc'),\n  'Uhrzeit': pubLokal.toFormat('HH:mm'),\n  'Alter (Tage)': Math.floor(jetzt.diff(pubUtc, 'days').days),\n  'Dauer (hh:mm:ss)': hhmmss(dauerSek),\n  'Dauer (Sek.)': dauerSek,\n  'Sichtbarkeit': status.privacyStatus || leer,\n  'Playlists': ctx.playlists || leer,\n  'Aufrufe Lifetime': aufrufe,\n  'Impressionen Lifetime': impressionen,\n  'CTR Impressionen %': istZahl(ctr) ? r(ctr, 2) : leer,\n  'Klicks aus Impressionen': (istZahl(impressionen) && istZahl(ctr)) ? Math.round(impressionen * ctr / 100) : leer,\n  'Wiedergabezeit Std. 3 Mon.': std(wert('wz_3m', 'estimatedMinutesWatched')),\n  'Wiedergabezeit Std. 6 Mon.': std(wert('wz_6m', 'estimatedMinutesWatched')),\n  'Wiedergabezeit Std. 12 Mon.': std(wert('wz_12m', 'estimatedMinutesWatched')),\n  'Wiedergabezeit Std. Lifetime': std(wert('basis', 'estimatedMinutesWatched')),\n  'Aufrufe 3 Mon.': wert('wz_3m', 'views'),\n  'Aufrufe 6 Mon.': wert('wz_6m', 'views'),\n  'Aufrufe 12 Mon.': wert('wz_12m', 'views'),\n  'Ø Wiedergabedauer (mm:ss)': mmss(wert('basis', 'averageViewDuration')),\n  'Ø angesehen %': r(wert('basis', 'averageViewPercentage'), 1),\n  'Bindung bei 25 %': bindungBei(0.25),\n  'Bindung bei 50 %': bindungBei(0.5),\n  'Bindung bei 75 %': bindungBei(0.75),\n  'Bindung am Ende': bindungBei(1),\n  'Relative Bindung': relBindung,\n  'Stärkster Abfall bei': staerksterAbfall,\n  'Likes': likes,\n  'Kommentare': kommentare,\n  'Shares': shares,\n  'Engagement-Rate %': engagement,\n  'Abos gewonnen': abosPlus,\n  'Abos verloren': abosMinus,\n  'Abos netto': (istZahl(abosPlus) && istZahl(abosMinus)) ? abosPlus - abosMinus : leer,\n  'Aufrufe von Abonnenten %': pct(abostatus, 'SUBSCRIBED'),\n  'Quelle YouTube-Suche %': pct(q, 'YT_SEARCH'),\n  'Quelle Vorgeschlagene Videos %': pct(q, 'RELATED_VIDEO'),\n  'Quelle Startseite/Browse %': pct(q, 'SUBSCRIBER'),\n  'Quelle Shorts-Feed %': pct(q, 'SHORTS'),\n  'Quelle Kanalseite %': pct(q, 'YT_CHANNEL'),\n  'Quelle Playlists %': pct(q, 'PLAYLIST', 'YT_PLAYLIST_PAGE'),\n  'Quelle Extern %': pct(q, 'EXT_URL'),\n  'Quelle Endbildschirme %': pct(q, 'END_SCREEN'),\n  'Quelle Direkt/Unbekannt %': pct(q, 'NO_LINK_OTHER'),\n  'Quelle Sonstige %': sonstige,\n  'Top externe Quellen': topListe('extern'),\n  'Top-10 Suchbegriffe': topListe('suche'),\n  'Hat Info-Karten': hatKarten,\n  'Karten-Impressionen': kImpr,\n  'Karten-Klicks': kKlicks,\n  'Karten-Klickrate %': kRate,\n  'Karten-Teaser-Impressionen': kTImpr,\n  'Karten-Teaser-Klicks': kTKlicks,\n  'Endbildschirm-Impressionen': studio.endImpressionen ?? leer,\n  'Endbildschirm-Klicks': studio.endKlicks ?? leer,\n  'Endbildschirm-Klickrate %': istZahl(studio.endCtr) ? r(studio.endCtr, 2) : leer,\n  'Anteil weiblich %': weiblich,\n  'Anteil männlich %': maennlich,\n  'Top-Altersgruppe': topAlter,\n  'Top-3 Länder': top3Laender,\n  'Anteil Mobil %': pct(geraete, 'MOBILE'),\n  'Anteil Desktop %': pct(geraete, 'DESKTOP'),\n  'Anteil TV %': pct(geraete, 'TV'),\n  'Anteil Tablet %': pct(geraete, 'TABLET'),\n  'Titel-Länge (Zeichen)': titel.length,\n  'Beschreibung': kuerzen(beschreibung),\n  'Beschreibung-Länge (Zeichen)': beschreibung.length,\n  'Links in Beschreibung': domains.join(' | '),\n  'Hashtags': hashtags.join('; '),\n  'Kapitel (Anzahl)': kapitel,\n  'Tags': tags.join(', '),\n  'Anzahl Tags': tags.length,\n  'Kategorie': ctx.kategorie || leer,\n  'Audio-Sprache': sn.defaultAudioLanguage || leer,\n  'Untertitel vorhanden': janein(cd.caption),\n  'Für Kinder': janein(status.madeForKids),\n  'Anzahl Kommentare': zahl(st.commentCount),\n  'Kommentare ohne Antwort': kommentareOk ? threads.filter(c => c.antworten === 0).length : leer,\n  'Kommentare mit Frage': kommentareOk ? threads.filter(c => kText(c).includes('?')).length : leer,\n  'Kommentartexte': kommentartexte,\n  'Thumbnail-URL': thumbnailUrl,\n  'Thumbnail-Datei (Drive)': leer, // wird in \"Zeile fertigstellen\" gesetzt\n  'Abgerufen am': jetzt.toFormat('yyyy-MM-dd HH:mm'),\n};\n\n// Drive-Suche nach vorhandener Thumbnail-Datei (gleicher Name im Ordner \"Thumbnails\")\nconst dateiname = name + '.jpg';\nconst esc = s => s.replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\");\nconst drive = {\n  dateiname,\n  query: `name = '${esc(dateiname)}' and '${esc(String(cfg.thumbnail_ordner_id))}' in parents and trashed = false`,\n};\n\nreturn [{ json: { zeile, drive } }];\n"
+      },
+      "id": "e0e90344-8587-5b4b-a063-8ad9dae0a14d",
+      "name": "Zeile zusammenbauen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3520,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "={{ $json.drive.query }}",
+        "limit": 1,
+        "filter": {},
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "webViewLink"
+          ]
+        }
+      },
+      "id": "dc9c977c-43ef-5216-a0ec-cd0b9dc9765e",
+      "name": "Thumbnail suchen",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3740,
+        560
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "=https://i.ytimg.com/vi/{{ $('Zeile zusammenbauen').first().json.zeile['Video-ID'] }}/mqdefault.jpg",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        }
+      },
+      "id": "39552224-6410-5cd8-879f-3abf31939be8",
+      "name": "Thumbnail laden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3960,
+        560
+      ],
+      "executeOnce": true,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "76748b98-c547-5c4e-930e-7779d5190061",
+              "leftValue": "={{ String($('Thumbnail suchen').first().json.id ?? '') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5d580c07-4449-59a1-8d57-bf643a9151d4",
+      "name": "Thumbnail vorhanden?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4180,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "update",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Thumbnail suchen').first().json.id }}",
+          "mode": "id"
+        },
+        "changeFileContent": true,
+        "inputDataFieldName": "data",
+        "updateFields": {}
+      },
+      "id": "e97bee5e-7ba7-5ba7-b75f-6a18ce9723c6",
+      "name": "Thumbnail ersetzen",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        4400,
+        460
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "name": "={{ $('Zeile zusammenbauen').first().json.drive.dateiname }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $('Konfiguration').first().json.thumbnail_ordner_id }}",
+          "mode": "id"
+        },
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "id": "8bff1696-8dfa-564a-801b-34586651762c",
+      "name": "Thumbnail hochladen",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        4400,
+        660
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Drive-Link ergänzen; Ergebnis enthält nur Spalten des Blatts \"Videos\"\nconst zeile = Object.assign({}, $('Zeile zusammenbauen').first().json.zeile);\nconst drive = $input.first().json || {};\nlet dateiId = (!drive.error && drive.id) ? drive.id : '';\nif (!dateiId) {\n  const vorhanden = $('Thumbnail suchen').first().json;\n  if (vorhanden && vorhanden.id) dateiId = vorhanden.id;\n}\nzeile['Thumbnail-Datei (Drive)'] = dateiId ? `https://drive.google.com/file/d/${dateiId}/view` : '';\nreturn [{ json: zeile }];\n"
+      },
+      "id": "27d03c10-21fe-5ab6-a985-74d8d62619a0",
+      "name": "Zeile fertigstellen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Konfiguration').first().json.ziel_sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Konfiguration').first().json.ziel_blatt }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Video-ID"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Video-ID",
+              "displayName": "Video-ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Titel",
+              "displayName": "Titel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "YouTube-Link",
+              "displayName": "YouTube-Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Format (Short/Long)",
+              "displayName": "Format (Short/Long)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Veröffentlicht am",
+              "displayName": "Veröffentlicht am",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Wochentag",
+              "displayName": "Wochentag",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Uhrzeit",
+              "displayName": "Uhrzeit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alter (Tage)",
+              "displayName": "Alter (Tage)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Dauer (hh:mm:ss)",
+              "displayName": "Dauer (hh:mm:ss)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Dauer (Sek.)",
+              "displayName": "Dauer (Sek.)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sichtbarkeit",
+              "displayName": "Sichtbarkeit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Playlists",
+              "displayName": "Playlists",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Aufrufe Lifetime",
+              "displayName": "Aufrufe Lifetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Impressionen Lifetime",
+              "displayName": "Impressionen Lifetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CTR Impressionen %",
+              "displayName": "CTR Impressionen %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Klicks aus Impressionen",
+              "displayName": "Klicks aus Impressionen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Wiedergabezeit Std. 3 Mon.",
+              "displayName": "Wiedergabezeit Std. 3 Mon.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Wiedergabezeit Std. 6 Mon.",
+              "displayName": "Wiedergabezeit Std. 6 Mon.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Wiedergabezeit Std. 12 Mon.",
+              "displayName": "Wiedergabezeit Std. 12 Mon.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Wiedergabezeit Std. Lifetime",
+              "displayName": "Wiedergabezeit Std. Lifetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Aufrufe 3 Mon.",
+              "displayName": "Aufrufe 3 Mon.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Aufrufe 6 Mon.",
+              "displayName": "Aufrufe 6 Mon.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Aufrufe 12 Mon.",
+              "displayName": "Aufrufe 12 Mon.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ø Wiedergabedauer (mm:ss)",
+              "displayName": "Ø Wiedergabedauer (mm:ss)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ø angesehen %",
+              "displayName": "Ø angesehen %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Bindung bei 25 %",
+              "displayName": "Bindung bei 25 %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Bindung bei 50 %",
+              "displayName": "Bindung bei 50 %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Bindung bei 75 %",
+              "displayName": "Bindung bei 75 %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Bindung am Ende",
+              "displayName": "Bindung am Ende",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Relative Bindung",
+              "displayName": "Relative Bindung",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Stärkster Abfall bei",
+              "displayName": "Stärkster Abfall bei",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Likes",
+              "displayName": "Likes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kommentare",
+              "displayName": "Kommentare",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Shares",
+              "displayName": "Shares",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Engagement-Rate %",
+              "displayName": "Engagement-Rate %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Abos gewonnen",
+              "displayName": "Abos gewonnen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Abos verloren",
+              "displayName": "Abos verloren",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Abos netto",
+              "displayName": "Abos netto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Aufrufe von Abonnenten %",
+              "displayName": "Aufrufe von Abonnenten %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle YouTube-Suche %",
+              "displayName": "Quelle YouTube-Suche %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle Vorgeschlagene Videos %",
+              "displayName": "Quelle Vorgeschlagene Videos %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle Startseite/Browse %",
+              "displayName": "Quelle Startseite/Browse %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle Shorts-Feed %",
+              "displayName": "Quelle Shorts-Feed %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle Kanalseite %",
+              "displayName": "Quelle Kanalseite %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle Playlists %",
+              "displayName": "Quelle Playlists %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle Extern %",
+              "displayName": "Quelle Extern %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle Endbildschirme %",
+              "displayName": "Quelle Endbildschirme %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle Direkt/Unbekannt %",
+              "displayName": "Quelle Direkt/Unbekannt %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Quelle Sonstige %",
+              "displayName": "Quelle Sonstige %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Top externe Quellen",
+              "displayName": "Top externe Quellen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Top-10 Suchbegriffe",
+              "displayName": "Top-10 Suchbegriffe",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hat Info-Karten",
+              "displayName": "Hat Info-Karten",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Karten-Impressionen",
+              "displayName": "Karten-Impressionen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Karten-Klicks",
+              "displayName": "Karten-Klicks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Karten-Klickrate %",
+              "displayName": "Karten-Klickrate %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Karten-Teaser-Impressionen",
+              "displayName": "Karten-Teaser-Impressionen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Karten-Teaser-Klicks",
+              "displayName": "Karten-Teaser-Klicks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Endbildschirm-Impressionen",
+              "displayName": "Endbildschirm-Impressionen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Endbildschirm-Klicks",
+              "displayName": "Endbildschirm-Klicks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Endbildschirm-Klickrate %",
+              "displayName": "Endbildschirm-Klickrate %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Anteil weiblich %",
+              "displayName": "Anteil weiblich %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Anteil männlich %",
+              "displayName": "Anteil männlich %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Top-Altersgruppe",
+              "displayName": "Top-Altersgruppe",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Top-3 Länder",
+              "displayName": "Top-3 Länder",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Anteil Mobil %",
+              "displayName": "Anteil Mobil %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Anteil Desktop %",
+              "displayName": "Anteil Desktop %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Anteil TV %",
+              "displayName": "Anteil TV %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Anteil Tablet %",
+              "displayName": "Anteil Tablet %",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Titel-Länge (Zeichen)",
+              "displayName": "Titel-Länge (Zeichen)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Beschreibung",
+              "displayName": "Beschreibung",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Beschreibung-Länge (Zeichen)",
+              "displayName": "Beschreibung-Länge (Zeichen)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Links in Beschreibung",
+              "displayName": "Links in Beschreibung",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kapitel (Anzahl)",
+              "displayName": "Kapitel (Anzahl)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tags",
+              "displayName": "Tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Anzahl Tags",
+              "displayName": "Anzahl Tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kategorie",
+              "displayName": "Kategorie",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Audio-Sprache",
+              "displayName": "Audio-Sprache",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Untertitel vorhanden",
+              "displayName": "Untertitel vorhanden",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Für Kinder",
+              "displayName": "Für Kinder",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Anzahl Kommentare",
+              "displayName": "Anzahl Kommentare",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kommentare ohne Antwort",
+              "displayName": "Kommentare ohne Antwort",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kommentare mit Frage",
+              "displayName": "Kommentare mit Frage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Kommentartexte",
+              "displayName": "Kommentartexte",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Thumbnail-URL",
+              "displayName": "Thumbnail-URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Thumbnail-Datei (Drive)",
+              "displayName": "Thumbnail-Datei (Drive)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Abgerufen am",
+              "displayName": "Abgerufen am",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "id": "014e61a2-8993-5088-ac39-acb4daed9ca5",
+      "name": "Zeile schreiben",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        4840,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nur Video-ID (Abgleich) und die =IMAGE()-Formel – wird mit USER_ENTERED geschrieben\nconst id = $('Zeile fertigstellen').first().json['Video-ID'];\nreturn [{ json: { 'Video-ID': id, 'Thumbnail': `=IMAGE(\"https://i.ytimg.com/vi/${id}/default.jpg\")` } }];\n"
+      },
+      "id": "5d95d8fd-a155-586d-8628-a91381c42bb1",
+      "name": "Thumbnail-Formel vorbereiten",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5060,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Konfiguration').first().json.ziel_sheet_id }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Konfiguration').first().json.ziel_blatt }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "Video-ID"
+          ],
+          "schema": [
+            {
+              "id": "Video-ID",
+              "displayName": "Video-ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Thumbnail",
+              "displayName": "Thumbnail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "USER_ENTERED",
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "id": "2a09b30d-d65c-517f-a1d7-78e0670e35d7",
+      "name": "Thumbnail-Formel schreiben",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        5280,
+        560
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "seconds"
+      },
+      "id": "b41149de-d6b4-577d-8ff7-550b8acac1a6",
+      "name": "Pause",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5500,
+        560
+      ],
+      "webhookId": "b16135a5-e50f-5939-bb72-456dac995c50"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Zusammenfassung des Laufs\nreturn [{ json: { verarbeitete_videos: $('Daten vorbereiten').all().length, fertig_um: DateTime.now().setZone($('Konfiguration').first().json.zeitzone || 'Europe/Berlin').toFormat('yyyy-MM-dd HH:mm') } }];\n"
+      },
+      "id": "8c344139-4900-519a-b4d5-fc518b1c71e9",
+      "name": "Fertig",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## YouTube-Kanalanalyse → Google Sheet\n\n**Vor dem ersten Lauf**\n1. Node **Konfiguration**: `ziel_sheet_id`, `thumbnail_ordner_id` eintragen, `studio_export_blatt` prüfen (Standard „Tabellendaten“). `max_videos` = 3 zum Testen, 0 = alle.\n2. Credentials zuweisen:\n   • alle HTTP-Nodes zu YouTube (Kanal, Playlists, Videos, Kategorien, Analytics, Kommentare): **Google OAuth2 API** „Google YouTube (RAG Pipeline)“ mit Scopes `youtube.readonly` + `yt-analytics.readonly`\n   • Google-Sheets-Nodes: **Google Sheets OAuth2**\n   • Google-Drive-Nodes: **Google Drive OAuth2**\n   • „Thumbnail laden“ braucht **keine** Credential.\n3. Nach dem Import prüfen: Authentication = *Predefined Credential Type → Google OAuth2 API*, Operationen der Google-Nodes, Expression-Felder.\n\n**Test:** zuerst nur „Kanal holen“ ausführen → muss den Gicht-Lotse-Kanal liefern.\n\n**Hinweise**\n• Spalten „Info-Karten Ziele“ und „Endbildschirm Ziele“ werden nie geschrieben.\n• Hauptzeile wird RAW geschrieben, die Spalte „Thumbnail“ (=IMAGE) separat mit USER_ENTERED.\n• Fehlerhafte Analytics-Abfragen lassen nur die betroffene Spalte leer.\n• Details: README.md im Repo-Ordner n8n/youtube-analyse.",
+        "height": 620,
+        "width": 560,
+        "color": 4
+      },
+      "id": "09d01b4c-f09c-5b66-b14a-bf3ea79a1c8c",
+      "name": "Kurzanleitung",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -380
+      ]
+    }
+  ],
+  "connections": {
+    "Start (manuell)": {
+      "main": [
+        [
+          {
+            "node": "Konfiguration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Konfiguration": {
+      "main": [
+        [
+          {
+            "node": "Kanal holen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kanal holen": {
+      "main": [
+        [
+          {
+            "node": "Upload-Playlist lesen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload-Playlist lesen": {
+      "main": [
+        [
+          {
+            "node": "Video-ID-Gruppen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video-ID-Gruppen": {
+      "main": [
+        [
+          {
+            "node": "Video-Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video-Details": {
+      "main": [
+        [
+          {
+            "node": "Nur öffentliche Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nur öffentliche Videos": {
+      "main": [
+        [
+          {
+            "node": "Playlists holen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Playlists holen": {
+      "main": [
+        [
+          {
+            "node": "Playlist-Liste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Playlist-Liste": {
+      "main": [
+        [
+          {
+            "node": "Playlist-Videos holen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Playlist-Videos holen": {
+      "main": [
+        [
+          {
+            "node": "Kategorien holen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kategorien holen": {
+      "main": [
+        [
+          {
+            "node": "Studio-Export lesen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Studio-Export lesen": {
+      "main": [
+        [
+          {
+            "node": "Daten vorbereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daten vorbereiten": {
+      "main": [
+        [
+          {
+            "node": "Loop über Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop über Videos": {
+      "main": [
+        [
+          {
+            "node": "Fertig",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analytics-Abfragen erzeugen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics-Abfragen erzeugen": {
+      "main": [
+        [
+          {
+            "node": "Analytics abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics abrufen": {
+      "main": [
+        [
+          {
+            "node": "Kommentare abrufen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kommentare abrufen": {
+      "main": [
+        [
+          {
+            "node": "Zeile zusammenbauen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zeile zusammenbauen": {
+      "main": [
+        [
+          {
+            "node": "Thumbnail suchen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thumbnail suchen": {
+      "main": [
+        [
+          {
+            "node": "Thumbnail laden",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thumbnail laden": {
+      "main": [
+        [
+          {
+            "node": "Thumbnail vorhanden?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thumbnail vorhanden?": {
+      "main": [
+        [
+          {
+            "node": "Thumbnail ersetzen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Thumbnail hochladen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thumbnail ersetzen": {
+      "main": [
+        [
+          {
+            "node": "Zeile fertigstellen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thumbnail hochladen": {
+      "main": [
+        [
+          {
+            "node": "Zeile fertigstellen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zeile fertigstellen": {
+      "main": [
+        [
+          {
+            "node": "Zeile schreiben",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zeile schreiben": {
+      "main": [
+        [
+          {
+            "node": "Thumbnail-Formel vorbereiten",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thumbnail-Formel vorbereiten": {
+      "main": [
+        [
+          {
+            "node": "Thumbnail-Formel schreiben",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thumbnail-Formel schreiben": {
+      "main": [
+        [
+          {
+            "node": "Pause",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pause": {
+      "main": [
+        [
+          {
+            "node": "Loop über Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
