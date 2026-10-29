@@ -14,6 +14,11 @@ KOPFZEILE = (HIER / "youtube-analyse-kopfzeile.tsv").read_text(encoding="utf-8")
 YT = "https://www.googleapis.com/youtube/v3/"
 CFG = "$('Konfiguration').first().json"
 
+# Credential-Namen wie in n8n angelegt; n8n ordnet sie beim Import über den Namen zu
+CRED_YOUTUBE = {"googleOAuth2Api": {"id": "", "name": "Google YouTube Data und Analyse"}}
+CRED_SHEETS = {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets account"}}
+CRED_DRIVE = {"googleDriveOAuth2Api": {"id": "", "name": "johein1503@gmail.com - OAuth2 API"}}
+
 nodes = []
 connections = {}
 
@@ -23,6 +28,11 @@ def nid(name):
 
 
 def node(name, typ, version, pos, params, **extra):
+    if "credentials" not in extra:
+        if typ == "n8n-nodes-base.googleSheets":
+            extra["credentials"] = CRED_SHEETS
+        elif typ == "n8n-nodes-base.googleDrive":
+            extra["credentials"] = CRED_DRIVE
     n = {"parameters": params, "id": nid(name), "name": name, "type": typ,
          "typeVersion": version, "position": list(pos)}
     n.update(extra)
@@ -66,7 +76,7 @@ def youtube(name, pos, url, query=None, options=None, **extra):
     }
     if query:
         params["queryParameters"] = {"parameters": [{"name": k, "value": v} for k, v in query]}
-    return node(name, "n8n-nodes-base.httpRequest", 4.2, pos, params, **extra)
+    return node(name, "n8n-nodes-base.httpRequest", 4.2, pos, params, credentials=CRED_YOUTUBE, **extra)
 
 
 def rl_id(wert):
@@ -92,11 +102,11 @@ def p(dx=220):
 start = node("Start (manuell)", "n8n-nodes-base.manualTrigger", 1, (0, 300), {})
 
 konfig = [
-    ("ziel_sheet_id", "HIER_ZIEL_SHEET_ID_EINTRAGEN", "string"),
+    ("ziel_sheet_id", "1xNM0p9YcAvR0JXlWotfmhhvSLHB6H1is1Goyur-s_Ok", "string"),
     ("ziel_blatt", "Videos", "string"),
     ("studio_export_sheet_id", "1ZvIM94GocOg7WEkoRqyPzVvIJ1UNRax8BCjef_pCfIc", "string"),
     ("studio_export_blatt", "Tabellendaten", "string"),
-    ("thumbnail_ordner_id", "HIER_ORDNER_ID_EINTRAGEN", "string"),
+    ("thumbnail_ordner_id", "1zDvPi1NVebYu12wLCPOWeQ0k9rczZ-Mv", "string"),
     ("max_videos", 3, "number"),
     ("zeitzone", "Europe/Berlin", "string"),
 ]
@@ -164,7 +174,7 @@ node("Analytics abrufen", "n8n-nodes-base.httpRequest", 4.2, q(), {
     "authentication": "predefinedCredentialType",
     "nodeCredentialType": "googleOAuth2Api",
     "options": {"batching": {"batch": {"batchSize": 4, "batchInterval": 300}}},
-}, onError="continueRegularOutput", alwaysOutputData=True)
+}, credentials=CRED_YOUTUBE, onError="continueRegularOutput", alwaysOutputData=True)
 
 youtube("Kommentare abrufen", q(), YT + "commentThreads",
         [("part", "snippet"),
@@ -289,11 +299,11 @@ for a, b in zip(schluss, schluss[1:]):
 anleitung = """## YouTube-Kanalanalyse → Google Sheet
 
 **Vor dem ersten Lauf**
-1. Node **Konfiguration**: `ziel_sheet_id`, `thumbnail_ordner_id` eintragen, `studio_export_blatt` prüfen (Standard „Tabellendaten“). `max_videos` = 3 zum Testen, 0 = alle.
-2. Credentials zuweisen:
-   • alle HTTP-Nodes zu YouTube (Kanal, Playlists, Videos, Kategorien, Analytics, Kommentare): **Google OAuth2 API** „Google YouTube (RAG Pipeline)“ mit Scopes `youtube.readonly` + `yt-analytics.readonly`
-   • Google-Sheets-Nodes: **Google Sheets OAuth2**
-   • Google-Drive-Nodes: **Google Drive OAuth2**
+1. Node **Konfiguration**: Ziel-Sheet und Thumbnail-Ordner sind eingetragen. `studio_export_blatt` prüfen (Standard „Tabellendaten“). `max_videos` = 3 zum Testen, 0 = alle.
+2. Credentials prüfen (sind über den Namen vorbelegt):
+   • alle HTTP-Nodes zu YouTube: **Google OAuth2 API** „Google YouTube Data und Analyse“
+   • Google-Sheets-Nodes: „Google Sheets account“
+   • Google-Drive-Nodes: „johein1503@gmail.com - OAuth2 API“
    • „Thumbnail laden“ braucht **keine** Credential.
 3. Nach dem Import prüfen: Authentication = *Predefined Credential Type → Google OAuth2 API*, Operationen der Google-Nodes, Expression-Felder.
 

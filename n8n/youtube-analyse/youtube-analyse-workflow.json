@@ -19,7 +19,7 @@
             {
               "id": "5bf0547b-12af-5029-ad71-3712878a6269",
               "name": "ziel_sheet_id",
-              "value": "HIER_ZIEL_SHEET_ID_EINTRAGEN",
+              "value": "1xNM0p9YcAvR0JXlWotfmhhvSLHB6H1is1Goyur-s_Ok",
               "type": "string"
             },
             {
@@ -43,7 +43,7 @@
             {
               "id": "3c759631-8ed3-5813-ab38-dd8ffb842fd6",
               "name": "thumbnail_ordner_id",
-              "value": "HIER_ORDNER_ID_EINTRAGEN",
+              "value": "1zDvPi1NVebYu12wLCPOWeQ0k9rczZ-Mv",
               "type": "string"
             },
             {
@@ -98,7 +98,13 @@
       "position": [
         440,
         300
-      ]
+      ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "",
+          "name": "Google YouTube Data und Analyse"
+        }
+      }
     },
     {
       "parameters": {
@@ -148,7 +154,13 @@
       "position": [
         660,
         300
-      ]
+      ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "",
+          "name": "Google YouTube Data und Analyse"
+        }
+      }
     },
     {
       "parameters": {
@@ -194,7 +206,13 @@
       "position": [
         1100,
         300
-      ]
+      ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "",
+          "name": "Google YouTube Data und Analyse"
+        }
+      }
     },
     {
       "parameters": {
@@ -258,6 +276,12 @@
         1540,
         300
       ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "",
+          "name": "Google YouTube Data und Analyse"
+        }
+      },
       "onError": "continueRegularOutput",
       "alwaysOutputData": true
     },
@@ -323,6 +347,12 @@
         1980,
         300
       ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "",
+          "name": "Google YouTube Data und Analyse"
+        }
+      },
       "onError": "continueRegularOutput",
       "alwaysOutputData": true
     },
@@ -358,6 +388,12 @@
         2200,
         300
       ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "",
+          "name": "Google YouTube Data und Analyse"
+        }
+      },
       "executeOnce": true,
       "onError": "continueRegularOutput",
       "alwaysOutputData": true
@@ -388,7 +424,13 @@
       ],
       "executeOnce": true,
       "onError": "continueRegularOutput",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
     },
     {
       "parameters": {
@@ -451,6 +493,12 @@
         3080,
         560
       ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "",
+          "name": "Google YouTube Data und Analyse"
+        }
+      },
       "onError": "continueRegularOutput",
       "alwaysOutputData": true
     },
@@ -513,6 +561,12 @@
         3300,
         560
       ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "",
+          "name": "Google YouTube Data und Analyse"
+        }
+      },
       "executeOnce": true,
       "onError": "continueRegularOutput",
       "alwaysOutputData": true
@@ -554,7 +608,13 @@
         560
       ],
       "onError": "continueRegularOutput",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "",
+          "name": "johein1503@gmail.com - OAuth2 API"
+        }
+      }
     },
     {
       "parameters": {
@@ -635,7 +695,13 @@
         460
       ],
       "onError": "continueRegularOutput",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "",
+          "name": "johein1503@gmail.com - OAuth2 API"
+        }
+      }
     },
     {
       "parameters": {
@@ -665,7 +731,13 @@
         660
       ],
       "onError": "continueRegularOutput",
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "",
+          "name": "johein1503@gmail.com - OAuth2 API"
+        }
+      }
     },
     {
       "parameters": {
@@ -1507,7 +1579,13 @@
       "position": [
         4840,
         560
-      ]
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1576,7 +1654,13 @@
         5280,
         560
       ],
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "",
+          "name": "Google Sheets account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1608,7 +1692,7 @@
     },
     {
       "parameters": {
-        "content": "## YouTube-Kanalanalyse → Google Sheet\n\n**Vor dem ersten Lauf**\n1. Node **Konfiguration**: `ziel_sheet_id`, `thumbnail_ordner_id` eintragen, `studio_export_blatt` prüfen (Standard „Tabellendaten“). `max_videos` = 3 zum Testen, 0 = alle.\n2. Credentials zuweisen:\n   • alle HTTP-Nodes zu YouTube (Kanal, Playlists, Videos, Kategorien, Analytics, Kommentare): **Google OAuth2 API** „Google YouTube (RAG Pipeline)“ mit Scopes `youtube.readonly` + `yt-analytics.readonly`\n   • Google-Sheets-Nodes: **Google Sheets OAuth2**\n   • Google-Drive-Nodes: **Google Drive OAuth2**\n   • „Thumbnail laden“ braucht **keine** Credential.\n3. Nach dem Import prüfen: Authentication = *Predefined Credential Type → Google OAuth2 API*, Operationen der Google-Nodes, Expression-Felder.\n\n**Test:** zuerst nur „Kanal holen“ ausführen → muss den Gicht-Lotse-Kanal liefern.\n\n**Hinweise**\n• Spalten „Info-Karten Ziele“ und „Endbildschirm Ziele“ werden nie geschrieben.\n• Hauptzeile wird RAW geschrieben, die Spalte „Thumbnail“ (=IMAGE) separat mit USER_ENTERED.\n• Fehlerhafte Analytics-Abfragen lassen nur die betroffene Spalte leer.\n• Details: README.md im Repo-Ordner n8n/youtube-analyse.",
+        "content": "## YouTube-Kanalanalyse → Google Sheet\n\n**Vor dem ersten Lauf**\n1. Node **Konfiguration**: Ziel-Sheet und Thumbnail-Ordner sind eingetragen. `studio_export_blatt` prüfen (Standard „Tabellendaten“). `max_videos` = 3 zum Testen, 0 = alle.\n2. Credentials prüfen (sind über den Namen vorbelegt):\n   • alle HTTP-Nodes zu YouTube: **Google OAuth2 API** „Google YouTube Data und Analyse“\n   • Google-Sheets-Nodes: „Google Sheets account“\n   • Google-Drive-Nodes: „johein1503@gmail.com - OAuth2 API“\n   • „Thumbnail laden“ braucht **keine** Credential.\n3. Nach dem Import prüfen: Authentication = *Predefined Credential Type → Google OAuth2 API*, Operationen der Google-Nodes, Expression-Felder.\n\n**Test:** zuerst nur „Kanal holen“ ausführen → muss den Gicht-Lotse-Kanal liefern.\n\n**Hinweise**\n• Spalten „Info-Karten Ziele“ und „Endbildschirm Ziele“ werden nie geschrieben.\n• Hauptzeile wird RAW geschrieben, die Spalte „Thumbnail“ (=IMAGE) separat mit USER_ENTERED.\n• Fehlerhafte Analytics-Abfragen lassen nur die betroffene Spalte leer.\n• Details: README.md im Repo-Ordner n8n/youtube-analyse.",
         "height": 620,
         "width": 560,
         "color": 4

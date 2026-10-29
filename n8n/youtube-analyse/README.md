@@ -14,10 +14,10 @@ Der n8n-Workflow für das Briefing [`BRIEFING-youtube-analyse.md`](BRIEFING-yout
 1. Ziel-Sheet und Drive-Ordner `Thumbnails` anlegen und die Kopfzeile einfügen (Briefing 3.1), dazu die Google-Cloud-Einstellungen vornehmen (Briefing 3.2).
 2. Die JSON-Datei importieren.
 3. Im Node **Konfiguration** folgende Felder füllen:
-   - `ziel_sheet_id` und `thumbnail_ordner_id` eintragen. Ohne diese Werte bricht der Lauf mit einem Hinweis ab.
+   - `ziel_sheet_id` (Sheet „YouTube-Analyse Gicht-Lotse“) und `thumbnail_ordner_id` sind bereits eingetragen.
    - `studio_export_blatt` prüfen. Voreingestellt ist `Tabellendaten`, so heißt das Tabellenblatt bei deutschen Studio-Exporten normalerweise. Das muss im Export-Sheet geprüft werden.
    - `max_videos` steht auf `3` (Test-Modus). Mit `0` werden alle Videos verarbeitet.
-4. Credentials zuweisen (sie sind nach dem Import leer):
+4. Credentials prüfen. Sie sind über den Namen vorbelegt: „Google YouTube Data und Analyse“ (YouTube), „Google Sheets account“ (Sheets), „johein1503@gmail.com - OAuth2 API“ (Drive). Erkennt n8n sie beim Import nicht, in den Nodes von Hand auswählen:
    - **Alle YouTube-HTTP-Nodes** (Kanal holen, Upload-Playlist lesen, Video-Details, Playlists holen, Playlist-Videos holen, Kategorien holen, Analytics abrufen, Kommentare abrufen): *Authentication = Predefined Credential Type → Google OAuth2 API*, Credential „Google YouTube (RAG Pipeline)“ mit dem Scope
      `https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly`.
      Falls „Google OAuth2 API“ dort nicht angeboten wird: *Generic Credential Type → OAuth2 API* mit Authorization URL `https://accounts.google.com/o/oauth2/v2/auth`, Access Token URL `https://oauth2.googleapis.com/token`, demselben Scope und den Auth URI Query Parameters `access_type=offline&prompt=consent`.
