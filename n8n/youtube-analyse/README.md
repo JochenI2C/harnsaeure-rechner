@@ -17,10 +17,17 @@ Der n8n-Workflow für das Briefing [`BRIEFING-youtube-analyse.md`](BRIEFING-yout
    - `ziel_sheet_id` (Sheet „YouTube-Analyse Gicht-Lotse“) und `thumbnail_ordner_id` sind bereits eingetragen.
    - `studio_export_blatt` prüfen. Voreingestellt ist `Tabellendaten`, so heißt das Tabellenblatt bei deutschen Studio-Exporten normalerweise. Das muss im Export-Sheet geprüft werden.
    - `max_videos` steht auf `3` (Test-Modus). Mit `0` werden alle Videos verarbeitet.
-4. Credentials prüfen. Sie sind über den Namen vorbelegt: „Google YouTube Data und Analyse“ (YouTube), „Google Sheets account“ (Sheets), „johein1503@gmail.com - OAuth2 API“ (Drive). Erkennt n8n sie beim Import nicht, in den Nodes von Hand auswählen:
-   - **Alle YouTube-HTTP-Nodes** (Kanal holen, Upload-Playlist lesen, Video-Details, Playlists holen, Playlist-Videos holen, Kategorien holen, Analytics abrufen, Kommentare abrufen): *Authentication = Predefined Credential Type → Google OAuth2 API*, Credential „Google YouTube (RAG Pipeline)“ mit dem Scope
-     `https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly`.
-     Falls „Google OAuth2 API“ dort nicht angeboten wird: *Generic Credential Type → OAuth2 API* mit Authorization URL `https://accounts.google.com/o/oauth2/v2/auth`, Access Token URL `https://oauth2.googleapis.com/token`, demselben Scope und den Auth URI Query Parameters `access_type=offline&prompt=consent`.
+4. Credentials prüfen. Sie sind über den Namen vorbelegt: „YouTube Gicht-Lotse (Brand)“ (YouTube), „Google Sheets account“ (Sheets), „johein1503@gmail.com - OAuth2 API“ (Drive). Erkennt n8n sie beim Import nicht, in den Nodes von Hand auswählen:
+   - **Alle YouTube-HTTP-Nodes** (Kanal holen, Upload-Playlist lesen, Video-Details, Kategorien holen, Analytics abrufen, Kommentare abrufen): *Authentication = Generic Credential Type → OAuth2 API*, Credential „YouTube Gicht-Lotse (Brand)“:
+     - Grant Type: Authorization Code
+     - Authorization URL: `https://accounts.google.com/o/oauth2/v2/auth`
+     - Access Token URL: `https://oauth2.googleapis.com/token`
+     - Client ID/Secret: aus dem Google-Cloud-Projekt „RAG Pipeline“
+     - Scope: `https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly`
+     - Auth URI Query Parameters: `access_type=offline&prompt=select_account%20consent`
+     - Authentication: Body
+
+     Die generische Credential ist nötig, weil der Kanal Gicht-Lotse ein **Brand-Konto** ist. Nur mit `prompt=select_account` zeigt Google bei der Anmeldung die Kanalauswahl. Die Credential „Google OAuth2 API“ wählt immer das persönliche Profil (@jochenhein2327).
    - **Studio-Export lesen, Zeile schreiben, Thumbnail-Formel schreiben**: Google Sheets OAuth2.
    - **Thumbnail suchen / ersetzen / hochladen**: Google Drive OAuth2.
    - **Thumbnail laden** braucht keine Credential (öffentliche URL).
@@ -32,8 +39,8 @@ Danach den Testplan aus Briefing 7 durchgehen. Zuerst nur den Node **Kanal holen
 
 ```
 Start → Konfiguration → Kanal holen → Upload-Playlist lesen (paginiert) → Video-ID-Gruppen (je 50)
- → Video-Details → Nur öffentliche Videos → Playlists holen → Playlist-Liste → Playlist-Videos holen
- → Kategorien holen → Studio-Export lesen → Daten vorbereiten (ein Item pro Video) → Loop über Videos
+ → Video-Details → Nur öffentliche Videos → Kategorien holen
+ → Studio-Export lesen → Daten vorbereiten (ein Item pro Video) → Loop über Videos
    ↳ Analytics-Abfragen erzeugen (14 Items) → Analytics abrufen (ein HTTP-Node, Fehler → Spalte leer)
    → Kommentare abrufen (max. 2 × 100) → Zeile zusammenbauen → Thumbnail suchen → Thumbnail laden
    → Thumbnail vorhanden? → ja: Thumbnail ersetzen / nein: Thumbnail hochladen
@@ -56,7 +63,8 @@ Start → Konfiguration → Kanal holen → Upload-Playlist lesen (paginiert) �
 4. **Karten-Klickrate %** wird aus `cardClicks / cardImpressions × 100` berechnet, weil die API `cardClickRate` als Verhältnis liefert. **Hat Info-Karten** ist „Ja“, wenn es Teaser- oder Karten-Impressionen gibt.
 5. **Format:** Das Format wird über die Aufrufe je `creatorContentType` bestimmt: `SHORTS` → Short, `VIDEO_ON_DEMAND` → Long. Bei anderen oder fehlenden Werten (z. B. `UNSPECIFIED` bei alten Videos) gilt: Dauer ≤ 180 s → Short, sonst Long.
 6. **Thumbnail in Drive:** Gibt es im Ordner schon eine Datei mit gleichem Namen, wird ihr Inhalt ersetzt (gleiche Datei-ID, der Link bleibt gleich). Sonst wird die Datei neu hochgeladen.
-7. **Test-Modus:** `max_videos = 3` nimmt die drei **ältesten** öffentlichen Videos. Ihre Namen lassen sich direkt mit den Transkript-Dateien vergleichen.
+7. **Keine Playlist-Auswertung:** Die Spalte `Playlists` wird derzeit nicht befüllt und auch nicht überschrieben. Bei Bedarf lässt sie sich wieder ergänzen. Die Zugriffsquelle „Quelle Playlists %“ bleibt erhalten, sie stammt aus der Analytics API.
+8. **Test-Modus:** `max_videos = 3` nimmt die drei **ältesten** öffentlichen Videos. Ihre Namen lassen sich direkt mit den Transkript-Dateien vergleichen.
 
 ## Prüfergebnisse zu den offenen Punkten (Briefing 8)
 

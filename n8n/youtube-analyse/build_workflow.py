@@ -15,7 +15,8 @@ YT = "https://www.googleapis.com/youtube/v3/"
 CFG = "$('Konfiguration').first().json"
 
 # Credential-Namen wie in n8n angelegt; n8n ordnet sie beim Import über den Namen zu
-CRED_YOUTUBE = {"googleOAuth2Api": {"id": "", "name": "Google YouTube Data und Analyse"}}
+# Generische OAuth2-Credential, weil nur dort prompt=select_account gesetzt werden kann (Brand-Konto auswählbar)
+CRED_YOUTUBE = {"oAuth2Api": {"id": "", "name": "YouTube Gicht-Lotse (Brand)"}}
 CRED_SHEETS = {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets account"}}
 CRED_DRIVE = {"googleDriveOAuth2Api": {"id": "", "name": "johein1503@gmail.com - OAuth2 API"}}
 
@@ -69,8 +70,8 @@ def paginierung(max_seiten=None):
 def youtube(name, pos, url, query=None, options=None, **extra):
     params = {
         "url": url,
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "googleOAuth2Api",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
         "sendQuery": bool(query),
         "options": options or {},
     }
@@ -133,16 +134,6 @@ youtube("Video-Details", p(), YT + "videos",
 
 code("Nur öffentliche Videos", p(), "nur-oeffentliche-videos.js")
 
-youtube("Playlists holen", p(), YT + "playlists",
-        [("part", "snippet"), ("mine", "true"), ("maxResults", "50")],
-        {"pagination": paginierung()}, onError="continueRegularOutput", alwaysOutputData=True)
-
-code("Playlist-Liste", p(), "playlist-liste.js")
-
-youtube("Playlist-Videos holen", p(), YT + "playlistItems",
-        [("part", "snippet"), ("playlistId", "={{ $json.playlistId }}"), ("maxResults", "50")],
-        {"pagination": paginierung()}, onError="continueRegularOutput", alwaysOutputData=True)
-
 youtube("Kategorien holen", p(), YT + "videoCategories",
         [("part", "snippet"), ("regionCode", "DE"), ("hl", "de")],
         executeOnce=True, onError="continueRegularOutput", alwaysOutputData=True)
@@ -171,8 +162,8 @@ code("Analytics-Abfragen erzeugen", q(), "analytics-abfragen-erzeugen.js")
 
 node("Analytics abrufen", "n8n-nodes-base.httpRequest", 4.2, q(), {
     "url": "={{ $json.url }}",
-    "authentication": "predefinedCredentialType",
-    "nodeCredentialType": "googleOAuth2Api",
+    "authentication": "genericCredentialType",
+    "genericAuthType": "oAuth2Api",
     "options": {"batching": {"batch": {"batchSize": 4, "batchInterval": 300}}},
 }, credentials=CRED_YOUTUBE, onError="continueRegularOutput", alwaysOutputData=True)
 
@@ -237,7 +228,7 @@ X = IF_X + 220
 code("Zeile fertigstellen", q(), "zeile-fertigstellen.js")
 
 spalten_ohne_manuell = [s for s in KOPFZEILE
-                        if s not in ("Info-Karten Ziele", "Endbildschirm Ziele", "Thumbnail")]
+                        if s not in ("Info-Karten Ziele", "Endbildschirm Ziele", "Thumbnail", "Playlists")]
 node("Zeile schreiben", "n8n-nodes-base.googleSheets", 4.5, q(), {
     "resource": "sheet",
     "operation": "appendOrUpdate",
@@ -275,8 +266,7 @@ code("Fertig", (LOOP_X + 220, 300), "fertig.js")
 
 # ---------------------------------------------------------------- Verbindungen
 kette = ["Start (manuell)", "Konfiguration", "Kanal holen", "Upload-Playlist lesen", "Video-ID-Gruppen",
-         "Video-Details", "Nur öffentliche Videos", "Playlists holen", "Playlist-Liste",
-         "Playlist-Videos holen", "Kategorien holen", "Studio-Export lesen", "Daten vorbereiten",
+         "Video-Details", "Nur öffentliche Videos", "Kategorien holen", "Studio-Export lesen", "Daten vorbereiten",
          "Loop über Videos"]
 for a, b in zip(kette, kette[1:]):
     verbinde(a, b)
@@ -301,16 +291,16 @@ anleitung = """## YouTube-Kanalanalyse → Google Sheet
 **Vor dem ersten Lauf**
 1. Node **Konfiguration**: Ziel-Sheet und Thumbnail-Ordner sind eingetragen. `studio_export_blatt` prüfen (Standard „Tabellendaten“). `max_videos` = 3 zum Testen, 0 = alle.
 2. Credentials prüfen (sind über den Namen vorbelegt):
-   • alle HTTP-Nodes zu YouTube: **Google OAuth2 API** „Google YouTube Data und Analyse“
+   • alle HTTP-Nodes zu YouTube: **OAuth2 API** (Generic) „YouTube Gicht-Lotse (Brand)“
    • Google-Sheets-Nodes: „Google Sheets account“
    • Google-Drive-Nodes: „johein1503@gmail.com - OAuth2 API“
    • „Thumbnail laden“ braucht **keine** Credential.
-3. Nach dem Import prüfen: Authentication = *Predefined Credential Type → Google OAuth2 API*, Operationen der Google-Nodes, Expression-Felder.
+3. Nach dem Import prüfen: Authentication = *Generic Credential Type → OAuth2 API*, Operationen der Google-Nodes, Expression-Felder.
 
 **Test:** zuerst nur „Kanal holen“ ausführen → muss den Gicht-Lotse-Kanal liefern.
 
 **Hinweise**
-• Spalten „Info-Karten Ziele“ und „Endbildschirm Ziele“ werden nie geschrieben.
+• Spalten „Info-Karten Ziele“, „Endbildschirm Ziele“ und „Playlists“ werden nie geschrieben.
 • Hauptzeile wird RAW geschrieben, die Spalte „Thumbnail“ (=IMAGE) separat mit USER_ENTERED.
 • Fehlerhafte Analytics-Abfragen lassen nur die betroffene Spalte leer.
 • Details: README.md im Repo-Ordner n8n/youtube-analyse."""

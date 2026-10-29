@@ -1,22 +1,5 @@
-// Maps aufbauen (Playlists, Kategorien, Studio-Export) und ein Item pro Video ausgeben
+// Maps aufbauen (Kategorien, Studio-Export) und ein Item pro Video ausgeben
 const videos = $('Nur öffentliche Videos').first().json.videos;
-
-// --- Playlists: videoId -> Playlist-Titel ---
-const playlistTitel = {};
-for (const it of $('Playlist-Liste').all()) {
-  if (it.json.playlistId) playlistTitel[it.json.playlistId] = it.json.title;
-}
-const videoPlaylists = {};
-for (const seite of $('Playlist-Videos holen').all()) {
-  for (const pi of seite.json.items || []) {
-    const sn = pi.snippet || {};
-    const videoId = (sn.resourceId && sn.resourceId.videoId) || (pi.contentDetails && pi.contentDetails.videoId);
-    const titel = playlistTitel[sn.playlistId];
-    if (!videoId || !titel) continue;
-    if (!videoPlaylists[videoId]) videoPlaylists[videoId] = [];
-    if (!videoPlaylists[videoId].includes(titel)) videoPlaylists[videoId].push(titel);
-  }
-}
 
 // --- Kategorien: categoryId -> Name ---
 const kategorien = {};
@@ -77,7 +60,6 @@ if (sp.id) {
 return videos.map(video => ({
   json: {
     video,
-    playlists: (videoPlaylists[video.id] || []).join(' | '),
     kategorie: kategorien[video.snippet.categoryId] || video.snippet.categoryId || '',
     studio: studio[video.id] || {},
     studioSpalten: sp,

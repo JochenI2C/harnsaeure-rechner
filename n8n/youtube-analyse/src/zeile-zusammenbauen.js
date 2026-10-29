@@ -194,7 +194,8 @@ const th = sn.thumbnails || {};
 const thumbnailUrl = (th.maxres || th.standard || th.high || th.medium || th.default || {}).url || leer;
 
 // Zeile in Spaltenreihenfolge. Nicht enthalten (und daher nie überschrieben):
-// "Info-Karten Ziele", "Endbildschirm Ziele" (manuell) und "Thumbnail" (eigener Schreib-Node, USER_ENTERED).
+// "Info-Karten Ziele", "Endbildschirm Ziele" (manuell), "Thumbnail" (eigener Schreib-Node, USER_ENTERED)
+// und "Playlists" (Auswertung derzeit nicht benötigt).
 const zeile = {
   'Name': name,
   'Video-ID': id,
@@ -208,7 +209,6 @@ const zeile = {
   'Dauer (hh:mm:ss)': hhmmss(dauerSek),
   'Dauer (Sek.)': dauerSek,
   'Sichtbarkeit': status.privacyStatus || leer,
-  'Playlists': ctx.playlists || leer,
   'Aufrufe Lifetime': aufrufe,
   'Impressionen Lifetime': impressionen,
   'CTR Impressionen %': istZahl(ctr) ? r(ctr, 2) : leer,
