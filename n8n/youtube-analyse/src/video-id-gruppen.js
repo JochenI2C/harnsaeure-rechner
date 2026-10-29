@@ -16,7 +16,12 @@ for (const seite of $input.all()) {
     if (id && !ids.includes(id)) ids.push(id);
   }
 }
-if (ids.length === 0) throw new Error('Keine Videos in der Upload-Playlist gefunden.');
+if (ids.length === 0) {
+  // Häufigste Ursache: Credential mit dem persönlichen Profil statt mit dem Brand-Konto des Kanals verbunden
+  const kanal = $('Kanal holen').first().json.items?.[0]?.snippet || {};
+  throw new Error(`Keine Videos in der Upload-Playlist von Kanal "${kanal.title || '?'}" (${kanal.customUrl || '?'}). `
+    + 'Ist das der richtige Kanal? Sonst die YouTube-Credential neu verbinden und im Google-Fenster den Kanal (Brand-Konto) auswählen.');
+}
 
 const gruppen = [];
 for (let i = 0; i < ids.length; i += 50) {
