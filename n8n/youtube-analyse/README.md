@@ -87,6 +87,10 @@ Start → Konfiguration → Kanal holen → Upload-Playlist lesen (paginiert) �
   - Welche Spalten erkannt wurden, zeigt der Node *Daten vorbereiten* im Feld `studioSpalten`.
   - Zahlen im deutschen Format (`1.234`, `4,8`) werden umgerechnet.
 
+## Studio-Export: Zeitraum
+
+Der Studio-Export wird mit dem Zeitraum **„Letzte 365 Tage“** erstellt. Impressionen und CTR beziehen sich deshalb auf 12 Monate, die Spalte heißt `Impressionen 12 Mon.`. Vergleichbar sind sie mit `Aufrufe 12 Mon.`, nicht mit `Aufrufe Lifetime`. Für die Frage, wo heute Klicks verloren gehen, ist der 12-Monats-Zeitraum aussagekräftiger als die Lifetime-Werte.
+
 ## Bekannte Grenzen
 
 - Der Workflow wurde nicht in einer laufenden n8n-Instanz ausgeführt. Getestet sind die Code-Nodes mit Beispieldaten und die Struktur der JSON-Datei. Die Parameter der Google-Nodes nach dem Import kontrollieren (siehe Einrichtung 5).

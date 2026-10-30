@@ -163,13 +163,11 @@ const abostatus = anteile('abostatus', 'subscribedStatus', 'views');
 
 // --- Inhalt ---
 const beschreibung = sn.description || '';
-const urls = beschreibung.match(/https?:\/\/[^\s<>"'()\[\]]+/gi) || [];
+// Domains per Regex: die URL-Klasse steht in der Code-Node-Sandbox von n8n Cloud nicht zur Verfügung
 const domains = [];
-for (const u of urls) {
-  try {
-    const host = new URL(u).hostname.replace(/^www\./, '');
-    if (!domains.includes(host)) domains.push(host);
-  } catch (e) { /* ungültige URL ignorieren */ }
+for (const m of beschreibung.matchAll(/https?:\/\/([^\/\s<>"'()\[\]?#:]+)/gi)) {
+  const host = m[1].toLowerCase().replace(/^www\./, '');
+  if (!domains.includes(host)) domains.push(host);
 }
 const ohneUrls = (titel + ' ' + beschreibung).replace(/https?:\/\/\S+/gi, ' ');
 const hashtags = [...new Set(ohneUrls.match(/#[\p{L}\p{N}_]+/gu) || [])];
@@ -210,7 +208,7 @@ const zeile = {
   'Dauer (Sek.)': dauerSek,
   'Sichtbarkeit': status.privacyStatus || leer,
   'Aufrufe Lifetime': aufrufe,
-  'Impressionen Lifetime': impressionen,
+  'Impressionen 12 Mon.': impressionen,
   'CTR Impressionen %': istZahl(ctr) ? r(ctr, 2) : leer,
   'Klicks aus Impressionen': (istZahl(impressionen) && istZahl(ctr)) ? Math.round(impressionen * ctr / 100) : leer,
   'Wiedergabezeit Std. 3 Mon.': std(wert('wz_3m', 'estimatedMinutesWatched')),
