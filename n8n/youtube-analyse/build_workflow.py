@@ -227,8 +227,9 @@ node("Thumbnail hochladen", "n8n-nodes-base.googleDrive", 3, (IF_X + 220, 660), 
 X = IF_X + 220
 code("Zeile fertigstellen", q(), "zeile-fertigstellen.js")
 
-spalten_ohne_manuell = [s for s in KOPFZEILE
-                        if s not in ("Info-Karten Ziele", "Endbildschirm Ziele", "Thumbnail", "Playlists")]
+# Das Schema muss alle Spalten des Blatts in derselben Reihenfolge enthalten, sonst bricht der
+# Sheets-Node mit "Column names were updated after the node's setup" ab. Geschrieben werden bei
+# "Map Automatically" trotzdem nur die Felder des Input-Items.
 node("Zeile schreiben", "n8n-nodes-base.googleSheets", 4.5, q(), {
     "resource": "sheet",
     "operation": "appendOrUpdate",
@@ -238,7 +239,7 @@ node("Zeile schreiben", "n8n-nodes-base.googleSheets", 4.5, q(), {
         "mappingMode": "autoMapInputData",
         "value": {},
         "matchingColumns": ["Video-ID"],
-        "schema": sheets_schema(spalten_ohne_manuell),
+        "schema": sheets_schema(KOPFZEILE),
     },
     "options": {"cellFormat": "RAW", "handlingExtraData": "ignoreIt"},
 })
@@ -254,7 +255,7 @@ node("Thumbnail-Formel schreiben", "n8n-nodes-base.googleSheets", 4.5, q(), {
         "mappingMode": "autoMapInputData",
         "value": {},
         "matchingColumns": ["Video-ID"],
-        "schema": sheets_schema(["Video-ID", "Thumbnail"]),
+        "schema": sheets_schema(KOPFZEILE),
     },
     "options": {"cellFormat": "USER_ENTERED", "handlingExtraData": "ignoreIt"},
 }, onError="continueRegularOutput")
