@@ -377,7 +377,7 @@
       "parameters": {
         "url": "https://www.googleapis.com/youtube/v3/commentThreads",
         "authentication": "genericCredentialType",
-        "genericAuthType": "oAuth2Api",
+        "genericAuthType": "httpQueryAuth",
         "sendQuery": true,
         "options": {
           "pagination": {
@@ -433,9 +433,9 @@
         560
       ],
       "credentials": {
-        "oAuth2Api": {
+        "httpQueryAuth": {
           "id": "",
-          "name": "YouTube Gicht-Lotse (Brand)"
+          "name": "YouTube API-Key"
         }
       },
       "executeOnce": true,
@@ -2391,7 +2391,7 @@
     },
     {
       "parameters": {
-        "content": "## YouTube-Kanalanalyse → Google Sheet\n\n**Vor dem ersten Lauf**\n1. Node **Konfiguration**: Ziel-Sheet und Thumbnail-Ordner sind eingetragen. `studio_export_blatt` prüfen (Standard „Tabellendaten“). `max_videos` = 3 zum Testen, 0 = alle.\n2. Credentials prüfen (sind über den Namen vorbelegt):\n   • alle HTTP-Nodes zu YouTube: **OAuth2 API** (Generic) „YouTube Gicht-Lotse (Brand)“\n   • Google-Sheets-Nodes: „Google Sheets account“\n   • Google-Drive-Nodes: „johein1503@gmail.com - OAuth2 API“\n   • „Thumbnail laden“ braucht **keine** Credential.\n3. Nach dem Import prüfen: Authentication = *Generic Credential Type → OAuth2 API*, Operationen der Google-Nodes, Expression-Felder.\n\n**Test:** zuerst nur „Kanal holen“ ausführen → muss den Gicht-Lotse-Kanal liefern.\n\n**Hinweise**\n• Spalten „Info-Karten Ziele“, „Endbildschirm Ziele“ und „Playlists“ werden nie geschrieben.\n• Hauptzeile wird RAW geschrieben, die Spalte „Thumbnail“ (=IMAGE) separat mit USER_ENTERED.\n• Fehlerhafte Analytics-Abfragen lassen nur die betroffene Spalte leer.\n• Details: README.md im Repo-Ordner n8n/youtube-analyse.",
+        "content": "## YouTube-Kanalanalyse → Google Sheet\n\n**Vor dem ersten Lauf**\n1. Node **Konfiguration**: Ziel-Sheet und Thumbnail-Ordner sind eingetragen. `studio_export_blatt` prüfen (Standard „Tabellendaten“). `max_videos` = 3 zum Testen, 0 = alle.\n2. Credentials prüfen (sind über den Namen vorbelegt):\n   • alle HTTP-Nodes zu YouTube: **OAuth2 API** (Generic) „YouTube Gicht-Lotse (Brand)“\n   • „Kommentare abrufen“: **Query Auth** „YouTube API-Key“ (Name `key`, Wert = API-Schlüssel)\n   • Google-Sheets-Nodes: „Google Sheets account“\n   • Google-Drive-Nodes: „johein1503@gmail.com - OAuth2 API“\n   • „Thumbnail laden“ braucht **keine** Credential.\n3. Nach dem Import prüfen: Authentication = *Generic Credential Type → OAuth2 API*, Operationen der Google-Nodes, Expression-Felder.\n\n**Test:** zuerst nur „Kanal holen“ ausführen → muss den Gicht-Lotse-Kanal liefern.\n\n**Hinweise**\n• Spalten „Info-Karten Ziele“, „Endbildschirm Ziele“ und „Playlists“ werden nie geschrieben.\n• Hauptzeile wird RAW geschrieben, die Spalte „Thumbnail“ (=IMAGE) separat mit USER_ENTERED.\n• Fehlerhafte Analytics-Abfragen lassen nur die betroffene Spalte leer.\n• Details: README.md im Repo-Ordner n8n/youtube-analyse.",
         "height": 620,
         "width": 560,
         "color": 4

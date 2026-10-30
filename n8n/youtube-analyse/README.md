@@ -30,6 +30,7 @@ Der n8n-Workflow für das Briefing [`BRIEFING-youtube-analyse.md`](BRIEFING-yout
      Die generische Credential ist nötig, weil der Kanal Gicht-Lotse ein **Brand-Konto** ist. Nur mit `prompt=select_account` zeigt Google bei der Anmeldung die Kanalauswahl. Die Credential „Google OAuth2 API“ wählt immer das persönliche Profil (@jochenhein2327).
 
      **Bei jedem Connect/Reconnect:** Auf der Google-Seite „Konto oder Brand-Konto auswählen“ den **unteren** Eintrag „Jochen Hein – *YouTube*“ wählen. Das ist das Brand-Konto Gicht-Lotse. Der obere Eintrag mit der E-Mail-Adresse ist das persönliche Profil. Prüfen: **Kanal holen** muss `customUrl = @jochenhein-gicht-lotse` liefern.
+   - **Kommentare abrufen**: *Generic Credential Type → Query Auth*, Credential „YouTube API-Key“ mit Name `key` und als Wert einem API-Schlüssel aus der Google Cloud (APIs und Dienste → Anmeldedaten → API-Schlüssel, beschränkt auf YouTube Data API v3). `commentThreads.list` verlangt bei OAuth den Scope `youtube.force-ssl`, der auch Schreibrechte gibt. Öffentliche Kommentare lassen sich mit einem API-Schlüssel rein lesend abrufen.
    - **Studio-Export lesen, Zeile schreiben, Thumbnail-Formel schreiben**: Google Sheets OAuth2.
    - **Thumbnail suchen / ersetzen / hochladen**: Google Drive OAuth2.
    - **Thumbnail laden** braucht keine Credential (öffentliche URL).

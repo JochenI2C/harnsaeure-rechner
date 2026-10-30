@@ -17,6 +17,8 @@ CFG = "$('Konfiguration').first().json"
 # Credential-Namen wie in n8n angelegt; n8n ordnet sie beim Import über den Namen zu
 # Generische OAuth2-Credential, weil nur dort prompt=select_account gesetzt werden kann (Brand-Konto auswählbar)
 CRED_YOUTUBE = {"oAuth2Api": {"id": "", "name": "YouTube Gicht-Lotse (Brand)"}}
+# commentThreads verlangt bei OAuth den Schreib-Scope youtube.force-ssl; mit API-Key reicht Lesezugriff
+CRED_API_KEY = {"httpQueryAuth": {"id": "", "name": "YouTube API-Key"}}
 CRED_SHEETS = {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets account"}}
 CRED_DRIVE = {"googleDriveOAuth2Api": {"id": "", "name": "johein1503@gmail.com - OAuth2 API"}}
 
@@ -67,17 +69,18 @@ def paginierung(max_seiten=None):
     return {"pagination": p}
 
 
-def youtube(name, pos, url, query=None, options=None, **extra):
+def youtube(name, pos, url, query=None, options=None, api_key=False, **extra):
     params = {
         "url": url,
         "authentication": "genericCredentialType",
-        "genericAuthType": "oAuth2Api",
+        "genericAuthType": "httpQueryAuth" if api_key else "oAuth2Api",
         "sendQuery": bool(query),
         "options": options or {},
     }
     if query:
         params["queryParameters"] = {"parameters": [{"name": k, "value": v} for k, v in query]}
-    return node(name, "n8n-nodes-base.httpRequest", 4.2, pos, params, credentials=CRED_YOUTUBE, **extra)
+    return node(name, "n8n-nodes-base.httpRequest", 4.2, pos, params,
+                credentials=CRED_API_KEY if api_key else CRED_YOUTUBE, **extra)
 
 
 def rl_id(wert):
@@ -171,7 +174,7 @@ youtube("Kommentare abrufen", q(), YT + "commentThreads",
         [("part", "snippet"),
          ("videoId", "={{ $('Analytics-Abfragen erzeugen').first().json.ctx.video.id }}"),
          ("maxResults", "100"), ("order", "time"), ("textFormat", "plainText")],
-        {"pagination": paginierung(max_seiten=2)},
+        {"pagination": paginierung(max_seiten=2)}, api_key=True,
         executeOnce=True, onError="continueRegularOutput", alwaysOutputData=True)
 
 code("Zeile zusammenbauen", q(), "zeile-zusammenbauen.js")
@@ -293,6 +296,7 @@ anleitung = """## YouTube-Kanalanalyse → Google Sheet
 1. Node **Konfiguration**: Ziel-Sheet und Thumbnail-Ordner sind eingetragen. `studio_export_blatt` prüfen (Standard „Tabellendaten“). `max_videos` = 3 zum Testen, 0 = alle.
 2. Credentials prüfen (sind über den Namen vorbelegt):
    • alle HTTP-Nodes zu YouTube: **OAuth2 API** (Generic) „YouTube Gicht-Lotse (Brand)“
+   • „Kommentare abrufen“: **Query Auth** „YouTube API-Key“ (Name `key`, Wert = API-Schlüssel)
    • Google-Sheets-Nodes: „Google Sheets account“
    • Google-Drive-Nodes: „johein1503@gmail.com - OAuth2 API“
    • „Thumbnail laden“ braucht **keine** Credential.
