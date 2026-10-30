@@ -79,7 +79,7 @@ Start → Konfiguration → Kanal holen → Upload-Playlist lesen (paginiert) �
   - `creatorContentType` ist eine neuere Dimension. Falls sie mit dem Video-Filter abgelehnt wird, greift automatisch die Dauer-Regel.
 
   Jede abgelehnte Abfrage lässt **nur ihre Spalten leer**. Die Fehlermeldung steht in der Ausgabe von *Analytics abrufen* unter `error`.
-- **Studio-Export:** Den Export konnte ich nicht einsehen (privates Sheet). Die Spaltenzuordnung arbeitet deshalb tolerant:
+- **Studio-Export:** Blatt `Tabellendaten`. Der aktuelle deutsche Export nennt die Spalten `Videos` (Video-ID), `Thumbnail-Impressionen`, `Thumbnail-Klickrate (%)`, `Eingeblendete Abspannelemente`, `Klicks auf Abspannelement` und `Klicks pro eingeblendetem Abspannelement (%)`. Die Spaltenzuordnung arbeitet tolerant:
   - Groß-/Kleinschreibung und Sonderzeichen werden ignoriert; deutsche und englische Namen werden erkannt (`Inhalt`/`Content`, `Impressionen`/`Impressions`, `Klickrate der Impressionen (%)`/`Impressions click-through rate (%)`, Endbildschirm/End screen …).
   - Die Zeile „Gesamt“ und alle Zeilen ohne gültige Video-ID werden übersprungen.
   - Fehlende Spalten bleiben leer.

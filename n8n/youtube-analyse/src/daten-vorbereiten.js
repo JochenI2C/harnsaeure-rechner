@@ -19,21 +19,23 @@ const zahl = wert => {
   return s !== '' && isFinite(n) ? n : '';
 };
 
-// Spalten tolerant erkennen (deutsch/englisch, Groß-/Kleinschreibung egal)
+// Spalten tolerant erkennen (deutsch/englisch, Groß-/Kleinschreibung egal).
+// Aktueller deutscher Export: "Videos", "Thumbnail-Impressionen", "Thumbnail-Klickrate (%)",
+// "Eingeblendete Abspannelemente", "Klicks auf Abspannelement", "Klicks pro eingeblendetem Abspannelement (%)"
 function spaltenErkennen(namen) {
   const sp = {};
   for (const name of namen) {
     const n = norm(name);
-    const ende = n.includes('endbildschirm') || n.includes('endscreen');
-    const rate = n.includes('klickrate') || n.includes('clickthroughrate') || n.includes('clickrate') || n.includes('ctr');
-    const impr = n.includes('impression');
+    const ende = ['endbildschirm', 'endscreen', 'abspann'].some(w => n.includes(w));
+    const rate = ['klickrate', 'clickthroughrate', 'clickrate', 'ctr', 'klickspro', 'clicksper'].some(w => n.includes(w));
+    const impr = n.includes('impression') || n.includes('eingeblendet') || n.includes('angezeigt') || n.includes('shown');
     const klicks = n.includes('klicks') || n.includes('clicks');
-    if (!sp.id && ['inhalt', 'content', 'videoid', 'video'].includes(n)) sp.id = name;
-    else if (!ende && !rate && ['impressionen', 'impressions'].includes(n)) sp.impressionen = name;
-    else if (!ende && rate && impr) sp.ctr = name;
+    if (!sp.id && ['videos', 'video', 'inhalt', 'content', 'videoid'].includes(n)) sp.id = name;
+    else if (!ende && !rate && ['impressionen', 'impressions', 'thumbnailimpressionen', 'thumbnailimpressions'].includes(n)) sp.impressionen = name;
+    else if (!ende && rate && (impr || n.includes('thumbnail'))) sp.ctr = name;
     else if (ende && rate) sp.endCtr = name;
-    else if (ende && impr) sp.endImpressionen = name;
     else if (ende && klicks) sp.endKlicks = name;
+    else if (ende && impr) sp.endImpressionen = name;
   }
   return sp;
 }
