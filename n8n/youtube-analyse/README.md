@@ -71,7 +71,7 @@ Start → Konfiguration → Kanal holen → Upload-Playlist lesen (paginiert) �
 
 ## Prüfergebnisse zu den offenen Punkten (Briefing 8)
 
-- **„Append or Update Row“ und nicht gemappte Spalten:** Der Sheets-Node (v4) schreibt beim Aktualisieren nur die Zellen der Felder, die im Input-Item vorkommen. Die Hauptzeile enthält `Info-Karten Ziele`, `Endbildschirm Ziele` und `Thumbnail` bewusst **nicht** (Mapping „Map Automatically“). Die manuellen Spalten bleiben deshalb erhalten. Leere Werte werden als `""` übergeben, damit veraltete Werte gelöscht werden. Bitte mit Testplan-Schritt 5 bestätigen: eine manuelle Zelle füllen, den Lauf wiederholen, die Zelle muss unverändert sein.
+- **„Append or Update Row“ und nicht gemappte Spalten:** Der Sheets-Node (v4) schreibt beim Aktualisieren nur die Zellen der Felder, die im Input-Item vorkommen. Die Hauptzeile enthält `Info-Karten Ziele`, `Endbildschirm Ziele` und `Thumbnail` bewusst **nicht** (Mapping „Map Automatically“). Die manuellen Spalten bleiben deshalb erhalten. Leere Werte werden als `""` übergeben, damit veraltete Werte gelöscht werden. **Im Test bestätigt:** Ein Eintrag in `Info-Karten Ziele` blieb nach einem erneuten Lauf erhalten, es entstanden keine Dubletten.
 - **Analytics-Abfragen:** Sie sind nach der Channel-Reports-Doku zusammengestellt. Live testen konnte ich sie nicht, weil developers.google.com in dieser Umgebung nicht erreichbar war und keine Zugangsdaten vorliegen. Das Wichtigste:
   - Karten-Metriken sind im Basis-Report mit `filters=video==ID` zulässig.
   - `END_SCREEN` ist ein gültiger Wert von `insightTrafficSourceType`.
